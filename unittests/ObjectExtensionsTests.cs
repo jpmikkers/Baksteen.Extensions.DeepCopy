@@ -96,7 +96,8 @@ namespace unittests
         {
             object[] arr = new object[1];
             arr[0] = arr;
-            arr.Copy();
+            var copy=arr.Copy();
+            Assert.ReferenceEquals(copy, copy[0]);
         }
     }
 }
