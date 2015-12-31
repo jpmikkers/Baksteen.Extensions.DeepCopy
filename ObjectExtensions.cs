@@ -19,6 +19,7 @@ namespace System
         {
             return InternalCopy(originalObject, new Dictionary<Object, Object>(new ReferenceEqualityComparer()));
         }
+
         private static Object InternalCopy(Object originalObject, IDictionary<Object, Object> visited)
         {
             if (originalObject == null) return null;
@@ -39,36 +40,49 @@ namespace System
                     Array clonedArray = (Array)cloneObject;
                     clonedArray.ForEach((array, indices) => array.SetValue(InternalCopy(clonedArray.GetValue(indices), visited), indices));
                 }
-
             }
-            CopyFields(originalObject, visited, cloneObject, typeToReflect);
-            RecursiveCopyBaseTypePrivateFields(originalObject, visited, cloneObject, typeToReflect);
+
+            foreach (var fieldInfo in NonShallowFields(typeToReflect))
+            {
+                var originalFieldValue = fieldInfo.GetValue(originalObject);
+                var clonedFieldValue = InternalCopy(originalFieldValue,visited);
+                fieldInfo.SetValue(cloneObject, clonedFieldValue);
+            }
+
             return cloneObject;
         }
 
-        private static void RecursiveCopyBaseTypePrivateFields(object originalObject, IDictionary<object, object> visited, object cloneObject, Type typeToReflect)
-        {
-            if (typeToReflect.BaseType != null)
-            {
-                RecursiveCopyBaseTypePrivateFields(originalObject, visited, cloneObject, typeToReflect.BaseType);
-                CopyFields(originalObject, visited, cloneObject, typeToReflect.BaseType, BindingFlags.Instance | BindingFlags.NonPublic, info => info.IsPrivate);
-            }
-        }
-
-        private static void CopyFields(object originalObject, IDictionary<object, object> visited, object cloneObject, Type typeToReflect, BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy, Func<FieldInfo, bool> filter = null)
-        {
-            foreach (FieldInfo fieldInfo in typeToReflect.GetFields(bindingFlags))
-            {
-                if (filter != null && filter(fieldInfo) == false) continue;
-                if (IsPrimitive(fieldInfo.FieldType)) continue;
-                var originalFieldValue = fieldInfo.GetValue(originalObject);
-                var clonedFieldValue = InternalCopy(originalFieldValue, visited);
-                fieldInfo.SetValue(cloneObject, clonedFieldValue);
-            }
-        }
         public static T Copy<T>(this T original)
         {
             return (T)Copy((Object)original);
+        }
+
+        /// <summary>
+        /// From the given type hierarchy (i.e. including all base types), return all fields that should be deep-copied
+        /// </summary>
+        /// <param name="typeToReflect"></param>
+        /// <returns></returns>
+        private static IEnumerable<FieldInfo> NonShallowFields(Type typeToReflect)
+        {
+            // this loop will yield all protected and public fields of the flattened type hierarchy, and the private fields of the type itself.
+            foreach (FieldInfo fieldInfo in typeToReflect.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy))
+            {
+                if (IsPrimitive(fieldInfo.FieldType)) continue; // this is 5% faster than a where clause..
+                yield return fieldInfo;
+            }
+
+            // so now what's left to yield: the private fields of the base types
+            while (typeToReflect.BaseType != null)          // TODO: test whether comparing to typeof(object) is enough, it's faster
+            {
+                typeToReflect = typeToReflect.BaseType;
+
+                foreach (FieldInfo fieldInfo in typeToReflect.GetFields(BindingFlags.Instance | BindingFlags.NonPublic))
+                {
+                    if (!fieldInfo.IsPrivate) continue;        // skip the protected fields, we already yielded those above.
+                    if (IsPrimitive(fieldInfo.FieldType)) continue;
+                    yield return fieldInfo;
+                }
+            }
         }
     }
 
