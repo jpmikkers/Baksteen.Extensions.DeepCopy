@@ -27,7 +27,10 @@ namespace System
             if (typeof(XElement).IsAssignableFrom(typeToReflect)) return new XElement(originalObject as XElement);
             if (visited.ContainsKey(originalObject)) return visited[originalObject];
             if (typeof(Delegate).IsAssignableFrom(typeToReflect)) return null;
+
             var cloneObject = CloneMethod.Invoke(originalObject, null);
+            visited.Add(originalObject, cloneObject);
+
             if (typeToReflect.IsArray)
             {
                 var arrayType = typeToReflect.GetElementType();
@@ -38,7 +41,6 @@ namespace System
                 }
 
             }
-            visited.Add(originalObject, cloneObject);
             CopyFields(originalObject, visited, cloneObject, typeToReflect);
             RecursiveCopyBaseTypePrivateFields(originalObject, visited, cloneObject, typeToReflect);
             return cloneObject;

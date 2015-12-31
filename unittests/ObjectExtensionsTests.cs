@@ -90,5 +90,13 @@ namespace unittests
             Assert.AreEqual("hello there", "hello there".Copy());
             Assert.AreEqual(123, 123.Copy());
         }
+
+        [TestMethod]
+        public void Copy_CopiesSelfReferencingArray()
+        {
+            object[] arr = new object[1];
+            arr[0] = arr;
+            arr.Copy();
+        }
     }
 }
