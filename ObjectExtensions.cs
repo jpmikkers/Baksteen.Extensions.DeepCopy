@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.ArrayExtensions;
 using System.Xml.Linq;
+using System.Runtime.CompilerServices;
 
 namespace System
 {
@@ -92,10 +93,13 @@ namespace System
         {
             return ReferenceEquals(x, y);
         }
+
         public override int GetHashCode(object obj)
         {
             if (obj == null) return 0;
-            return obj.GetHashCode();
+            // The RuntimeHelpers.GetHashCode method always calls the Object.GetHashCode method non-virtually, 
+            // even if the object's type has overridden the Object.GetHashCode method.
+            return RuntimeHelpers.GetHashCode(obj);
         }
     }
 

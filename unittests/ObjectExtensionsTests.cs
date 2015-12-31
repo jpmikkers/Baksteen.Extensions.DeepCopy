@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Runtime.CompilerServices;
 
 #endregion
 
@@ -29,6 +30,14 @@ namespace unittests
         {
             public MySingleObject Single;
             public string Meta;
+        }
+
+        private class OverriddenHash
+        {
+            public override int GetHashCode()
+            {
+                return 42;
+            }
         }
 
         [TestMethod]
@@ -98,6 +107,15 @@ namespace unittests
             arr[0] = arr;
             var copy=arr.Copy();
             Assert.ReferenceEquals(copy, copy[0]);
+        }
+
+        [TestMethod]
+        public void ReferenceEqualityComparerShouldNotUseOverriddenHash()
+        {
+            var t = new OverriddenHash();
+            var equalityComparer = new ReferenceEqualityComparer();
+            Assert.AreNotEqual(42, equalityComparer.GetHashCode(t));
+            Assert.AreEqual(equalityComparer.GetHashCode(t), RuntimeHelpers.GetHashCode(t));
         }
     }
 }
