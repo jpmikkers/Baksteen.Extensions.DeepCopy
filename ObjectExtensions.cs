@@ -19,15 +19,23 @@ namespace System
             CloneMethod = Expression.Lambda<Func<object, object>>(body, p1).Compile();
         }
 
-        public static bool IsPrimitive(this Type type)
+        public static T Copy<T>(this T original)
         {
-            if (type == typeof(String)) return true;
-            return (type.IsValueType & type.IsPrimitive);
+            return (T)Copy((Object)original);
         }
 
         public static Object Copy(this Object originalObject)
         {
             return InternalCopy(originalObject, new Dictionary<Object, Object>(new ReferenceEqualityComparer()));
+        }
+
+        private static bool IsPrimitive(Type type)
+        {
+            if (type.IsValueType && type.IsPrimitive) return true;
+            if (type == typeof(String)) return true;
+            if (type == typeof(Decimal)) return true;
+            if (type == typeof(DateTime)) return true;
+            return false;
         }
 
         private static Object InternalCopy(Object originalObject, IDictionary<Object, Object> visited)
@@ -60,11 +68,6 @@ namespace System
             }
 
             return cloneObject;
-        }
-
-        public static T Copy<T>(this T original)
-        {
-            return (T)Copy((Object)original);
         }
 
         /// <summary>
