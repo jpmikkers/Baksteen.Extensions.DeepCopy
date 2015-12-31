@@ -3,12 +3,21 @@ using System.Reflection;
 using System.ArrayExtensions;
 using System.Xml.Linq;
 using System.Runtime.CompilerServices;
+using System.Linq.Expressions;
 
 namespace System
 {
     public static class ObjectExtensions
     {
-        private static readonly MethodInfo CloneMethod = typeof(Object).GetMethod("MemberwiseClone", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static Func<object, object> CloneMethod;
+
+        static ObjectExtensions()
+        {
+            MethodInfo cloneMethod = typeof(Object).GetMethod("MemberwiseClone", BindingFlags.NonPublic | BindingFlags.Instance);
+            var p1 = Expression.Parameter(typeof(object));
+            var body = Expression.Call(p1, cloneMethod);
+            CloneMethod = Expression.Lambda<Func<object, object>>(body, p1).Compile();
+        }
 
         public static bool IsPrimitive(this Type type)
         {
@@ -30,7 +39,7 @@ namespace System
             if (visited.ContainsKey(originalObject)) return visited[originalObject];
             if (typeof(Delegate).IsAssignableFrom(typeToReflect)) return null;
 
-            var cloneObject = CloneMethod.Invoke(originalObject, null);
+            var cloneObject = CloneMethod(originalObject);
             visited.Add(originalObject, cloneObject);
 
             if (typeToReflect.IsArray)
