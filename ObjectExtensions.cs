@@ -94,7 +94,8 @@ namespace System
                     foreach (var fieldInfo in CachedNonShallowFields(typeToReflect))
                     {
                         var originalFieldValue = fieldInfo.GetValue(originalObject);
-                        var clonedFieldValue = InternalCopy(originalFieldValue,true);
+                        // a valuetype field can never have a reference pointing to it, so don't check the object graph in that case
+                        var clonedFieldValue = InternalCopy(originalFieldValue, !fieldInfo.FieldType.IsValueType);
                         fieldInfo.SetValue(cloneObject, clonedFieldValue);
                     }
                 }
