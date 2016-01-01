@@ -12,7 +12,7 @@ namespace System
     {
         public static T Copy<T>(this T original)
         {
-            return (T)new DeepCopyContext().InternalCopy(original);
+            return (T)new DeepCopyContext().InternalCopy(original,true);
         }
 
         private class DeepCopyContext
@@ -45,33 +45,58 @@ namespace System
                 return false;
             }
 
-            public Object InternalCopy(Object originalObject)
+            public Object InternalCopy(Object originalObject, bool includeInObjectGraph)
             {
                 if (originalObject == null) return null;
                 var typeToReflect = originalObject.GetType();
                 if (IsPrimitive(typeToReflect)) return originalObject;
+
                 if (typeof(XElement).IsAssignableFrom(typeToReflect)) return new XElement(originalObject as XElement);
-                if (m_Visited.ContainsKey(originalObject)) return m_Visited[originalObject];
                 if (typeof(Delegate).IsAssignableFrom(typeToReflect)) return null;
 
+                if (includeInObjectGraph)
+                {
+                    object result;
+                    if (m_Visited.TryGetValue(originalObject, out result)) return result;
+                }
+
                 var cloneObject = CloneMethod(originalObject);
-                m_Visited.Add(originalObject, cloneObject);
+
+                if (includeInObjectGraph)
+                {
+                    m_Visited.Add(originalObject, cloneObject);
+                }
 
                 if (typeToReflect.IsArray)
                 {
-                    var arrayType = typeToReflect.GetElementType();
-                    if (IsPrimitive(arrayType) == false)
+                    var arrayElementType = typeToReflect.GetElementType();
+
+                    if (IsPrimitive(arrayElementType))
                     {
+                        // for an array of primitives, do nothing. The shallow clone is enough.
+                    }
+                    else if(arrayElementType.IsValueType)
+                    {
+                        // if its an array of structs, there's no need to check and add the individual elements to 'visited', because in .NET it's impossible to create
+                        // references to individual array elements.
                         Array clonedArray = (Array)cloneObject;
-                        clonedArray.ForEach((array, indices) => array.SetValue(InternalCopy(clonedArray.GetValue(indices)), indices));
+                        clonedArray.ForEach((array, indices) => array.SetValue(InternalCopy(clonedArray.GetValue(indices), false), indices));
+                    }
+                    else
+                    {
+                        // it's an array of ref types
+                        Array clonedArray = (Array)cloneObject;
+                        clonedArray.ForEach((array, indices) => array.SetValue(InternalCopy(clonedArray.GetValue(indices), true), indices));
                     }
                 }
-
-                foreach (var fieldInfo in CachedNonShallowFields(typeToReflect))
+                else
                 {
-                    var originalFieldValue = fieldInfo.GetValue(originalObject);
-                    var clonedFieldValue = InternalCopy(originalFieldValue);
-                    fieldInfo.SetValue(cloneObject, clonedFieldValue);
+                    foreach (var fieldInfo in CachedNonShallowFields(typeToReflect))
+                    {
+                        var originalFieldValue = fieldInfo.GetValue(originalObject);
+                        var clonedFieldValue = InternalCopy(originalFieldValue,true);
+                        fieldInfo.SetValue(cloneObject, clonedFieldValue);
+                    }
                 }
 
                 return cloneObject;
