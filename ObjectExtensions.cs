@@ -21,12 +21,7 @@ namespace System
 
         public static T Copy<T>(this T original)
         {
-            return (T)Copy((Object)original);
-        }
-
-        public static Object Copy(this Object originalObject)
-        {
-            return InternalCopy(originalObject, new Dictionary<Object, Object>(new ReferenceEqualityComparer()));
+            return (T)InternalCopy(original, new Dictionary<Object, Object>(new ReferenceEqualityComparer()));
         }
 
         private static bool IsPrimitive(Type type)
