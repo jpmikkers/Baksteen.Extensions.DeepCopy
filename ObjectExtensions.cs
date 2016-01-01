@@ -19,6 +19,7 @@ namespace System
         {
             private static readonly Func<object, object> CloneMethod;
             private readonly Dictionary<Object, Object> m_Visited;
+            private readonly Dictionary<Type, FieldInfo[]> m_NonShallowFieldCache;
 
             static DeepCopyContext()
             {
@@ -32,6 +33,7 @@ namespace System
             public DeepCopyContext()
             {
                 m_Visited = new Dictionary<object, object>(new ReferenceEqualityComparer());
+                m_NonShallowFieldCache = new Dictionary<Type, FieldInfo[]>();
             }
 
             private static bool IsPrimitive(Type type)
@@ -65,7 +67,7 @@ namespace System
                     }
                 }
 
-                foreach (var fieldInfo in NonShallowFields(typeToReflect))
+                foreach (var fieldInfo in CachedNonShallowFields(typeToReflect))
                 {
                     var originalFieldValue = fieldInfo.GetValue(originalObject);
                     var clonedFieldValue = InternalCopy(originalFieldValue);
@@ -73,6 +75,19 @@ namespace System
                 }
 
                 return cloneObject;
+            }
+
+            private FieldInfo[] CachedNonShallowFields(Type typeToReflect)
+            {
+                FieldInfo[] result;
+
+                if(!m_NonShallowFieldCache.TryGetValue(typeToReflect,out result))
+                {
+                    result = NonShallowFields(typeToReflect).ToArray();
+                    m_NonShallowFieldCache[typeToReflect] = result;
+                }
+
+                return result;
             }
 
             /// <summary>
