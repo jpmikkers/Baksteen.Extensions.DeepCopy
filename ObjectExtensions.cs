@@ -123,27 +123,14 @@ namespace System
             /// <returns></returns>
             private static IEnumerable<FieldInfo> NonShallowFields(Type typeToReflect)
             {
-                if (typeToReflect != typeof(object))
+                while (typeToReflect != typeof(object))
                 {
-                    // this loop will yield all protected and public fields of the flattened type hierarchy, and the private fields of the type itself.
-                    foreach (FieldInfo fieldInfo in typeToReflect.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy))
+                    foreach (var fieldInfo in typeToReflect.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly))
                     {
                         if (IsPrimitive(fieldInfo.FieldType)) continue; // this is 5% faster than a where clause..
                         yield return fieldInfo;
                     }
-
-                    // so now what's left to yield: the private fields of the base types
-                    while (typeToReflect.BaseType != typeof(object))          // this is 10% faster than checking against null
-                    {
-                        typeToReflect = typeToReflect.BaseType;
-
-                        foreach (FieldInfo fieldInfo in typeToReflect.GetFields(BindingFlags.Instance | BindingFlags.NonPublic))
-                        {
-                            if (!fieldInfo.IsPrivate) continue;        // skip the protected fields, we already yielded those above.
-                            if (IsPrimitive(fieldInfo.FieldType)) continue;
-                            yield return fieldInfo;
-                        }
-                    }
+                    typeToReflect = typeToReflect.BaseType;
                 }
             }
         }
