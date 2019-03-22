@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
-using System.ArrayExtensions;
 using System.Xml.Linq;
 using System.Runtime.CompilerServices;
 using System.Linq.Expressions;
@@ -36,12 +35,22 @@ namespace System
                 m_NonShallowFieldCache = new Dictionary<Type, FieldInfo[]>();
             }
 
-            private static bool IsPrimitive(Type type)
+            private static bool IsPrimitiveOrImmutable(Type type)
             {
-                if (type.IsValueType && type.IsPrimitive) return true;
-                if (type == typeof(String)) return true;
-                if (type == typeof(Decimal)) return true;
-                if (type == typeof(DateTime)) return true;
+                if (type.IsPrimitive)
+                {
+                    return true;
+                }
+                else if (type.IsValueType)
+                {
+                    if (type.IsEnum) return true;
+                    if (type == typeof(Decimal)) return true;
+                    if (type == typeof(DateTime)) return true;
+                }
+                else
+                {
+                    if (type == typeof(String)) return true;
+                }
                 return false;
             }
 
@@ -49,7 +58,7 @@ namespace System
             {
                 if (originalObject == null) return null;
                 var typeToReflect = originalObject.GetType();
-                if (IsPrimitive(typeToReflect)) return originalObject;
+                if (IsPrimitiveOrImmutable(typeToReflect)) return originalObject;
 
                 if (typeof(XElement).IsAssignableFrom(typeToReflect)) return new XElement(originalObject as XElement);
                 if (typeof(Delegate).IsAssignableFrom(typeToReflect)) return null;
@@ -71,7 +80,7 @@ namespace System
                 {
                     var arrayElementType = typeToReflect.GetElementType();
 
-                    if (IsPrimitive(arrayElementType))
+                    if (IsPrimitiveOrImmutable(arrayElementType))
                     {
                         // for an array of primitives, do nothing. The shallow clone is enough.
                     }
@@ -79,14 +88,12 @@ namespace System
                     {
                         // if its an array of structs, there's no need to check and add the individual elements to 'visited', because in .NET it's impossible to create
                         // references to individual array elements.
-                        Array clonedArray = (Array)cloneObject;
-                        clonedArray.ForEach((array, indices) => array.SetValue(InternalCopy(clonedArray.GetValue(indices), false), indices));
+                        ReplaceArrayElements((Array)cloneObject, x => InternalCopy(x, false));
                     }
                     else
                     {
                         // it's an array of ref types
-                        Array clonedArray = (Array)cloneObject;
-                        clonedArray.ForEach((array, indices) => array.SetValue(InternalCopy(clonedArray.GetValue(indices), true), indices));
+                        ReplaceArrayElements((Array)cloneObject, x => InternalCopy(x, true));
                     }
                 }
                 else
@@ -101,6 +108,50 @@ namespace System
                 }
 
                 return cloneObject;
+            }
+
+            private static void ReplaceArrayElements(Array array, Func<object, object> func, int dimension, int[] counts, int[] indices)
+            {
+                int len = counts[dimension];
+
+                if (dimension < (counts.Length - 1))
+                {
+                    // not the final dimension, loop the range, and recursively handle one dimension higher
+                    for (int t = 0; t < len; t++)
+                    {
+                        indices[dimension] = t;
+                        ReplaceArrayElements(array, func, dimension + 1, counts, indices);
+                    }
+                }
+                else
+                {
+                    // we've reached the final dimension where the elements are closest together in memory. Do a final loop.
+                    for (int t = 0; t < len; t++)
+                    {
+                        indices[dimension] = t;
+                        array.SetValue(func(array.GetValue(indices)), indices);
+                    }
+                }
+            }
+
+            private static void ReplaceArrayElements(Array array, Func<object, object> func)
+            {
+                if (array.Rank == 1)
+                {
+                    // do a fast loop for the common case, a one dimensional array
+                    int len = array.GetLength(0);
+                    for (int t = 0; t < len; t++)
+                    {
+                        array.SetValue(func(array.GetValue(t)), t);
+                    }
+                }
+                else
+                {
+                    // multidimensional array: recursively loop through all dimensions, starting with dimension zero.
+                    var counts = Enumerable.Range(0, array.Rank).Select(array.GetLength).ToArray();
+                    var indices = new int[array.Rank];
+                    ReplaceArrayElements(array, func, 0, counts, indices);
+                }
             }
 
             private FieldInfo[] CachedNonShallowFields(Type typeToReflect)
@@ -127,7 +178,7 @@ namespace System
                 {
                     foreach (var fieldInfo in typeToReflect.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly))
                     {
-                        if (IsPrimitive(fieldInfo.FieldType)) continue; // this is 5% faster than a where clause..
+                        if (IsPrimitiveOrImmutable(fieldInfo.FieldType)) continue; // this is 5% faster than a where clause..
                         yield return fieldInfo;
                     }
                     typeToReflect = typeToReflect.BaseType;
@@ -151,52 +202,4 @@ namespace System
             return RuntimeHelpers.GetHashCode(obj);
         }
     }
-
-    namespace ArrayExtensions
-    {
-        public static class ArrayExtensions
-        {
-            public static void ForEach(this Array array, Action<Array, int[]> action)
-            {
-                if (array.LongLength == 0) return;
-                ArrayTraverse walker = new ArrayTraverse(array);
-                do action(array, walker.Position);
-                while (walker.Step());
-            }
-        }
-
-        internal class ArrayTraverse
-        {
-            public int[] Position;
-            private int[] maxLengths;
-
-            public ArrayTraverse(Array array)
-            {
-                maxLengths = new int[array.Rank];
-                for (int i = 0; i < array.Rank; ++i)
-                {
-                    maxLengths[i] = array.GetLength(i) - 1;
-                }
-                Position = new int[array.Rank];
-            }
-
-            public bool Step()
-            {
-                for (int i = 0; i < Position.Length; ++i)
-                {
-                    if (Position[i] < maxLengths[i])
-                    {
-                        Position[i]++;
-                        for (int j = 0; j < i; j++)
-                        {
-                            Position[j] = 0;
-                        }
-                        return true;
-                    }
-                }
-                return false;
-            }
-        }
-    }
-
 }
