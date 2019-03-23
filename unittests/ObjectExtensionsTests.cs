@@ -40,6 +40,37 @@ namespace unittests
             }
         }
 
+        /// <summary>
+        /// Encapsulates an object, the container will always be seen as a mutable ref type.
+        /// Simplifies testing deepcopying.
+        /// </summary>
+        /// <typeparam name="T">Type to be encapsulated</typeparam>
+        private class Wrapper<T> : IEquatable<Wrapper<T>>
+        {
+            public T Value{ get; set; }
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as Wrapper<T>);
+            }
+
+            public bool Equals(Wrapper<T> other)
+            {
+                return other != null &&
+                       EqualityComparer<T>.Default.Equals(Value, other.Value);
+            }
+
+            public override int GetHashCode()
+            {
+                return -1937169414 + EqualityComparer<T>.Default.GetHashCode(Value);
+            }
+
+            public override string ToString()
+            {
+                return Value.ToString();
+            }
+        }
+
         [TestMethod]
         public void Copy_XElementWithChildren()
         {
@@ -116,6 +147,123 @@ namespace unittests
             var equalityComparer = new ReferenceEqualityComparer();
             Assert.AreNotEqual(42, equalityComparer.GetHashCode(t));
             Assert.AreEqual(equalityComparer.GetHashCode(t), RuntimeHelpers.GetHashCode(t));
+        }
+
+        static IEnumerable<T> ToIEnumerable<T>(System.Collections.IEnumerable enumerable)
+        {
+            var enumerator = enumerable.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                yield return (T)enumerator.Current;
+            }
+        }
+
+        static void AssertArraysAreEqual<T>(Array array1,Array array2,bool refsMustBeDifferent)
+        {
+            Assert.AreEqual(array1.GetType(), array2.GetType());
+            Assert.AreEqual(array1.LongLength, array2.LongLength);
+
+            foreach(var v in ToIEnumerable<T>(array1).Zip(
+                ToIEnumerable<T>(array2),
+                (x, y) => new { x, y } ))
+            {
+                Assert.AreEqual(v.x, v.y);
+                if (refsMustBeDifferent) Assert.AreNotSame(v.x, v.y);
+            }
+        }
+
+        [TestMethod]
+        public void Copy_Copies1dArray()
+        {
+            var t1 = new int[]{ 1, 2, 3 };
+            var t2 = t1.Copy();
+            Assert.AreNotSame(t1, t2);
+            AssertArraysAreEqual<int>(t1, t2,false);
+        }
+
+        [TestMethod]
+        public void Copy_Copies1dRefElementArray()
+        {
+            var t1 = new Wrapper<int>[]
+            {
+                new Wrapper<int>{ Value = 1 } ,
+                new Wrapper<int>{ Value = 2 } ,
+                new Wrapper<int>{ Value = 3 } ,
+            };
+            var t2 = t1.Copy();
+            Assert.AreNotSame(t1, t2);
+            AssertArraysAreEqual<Wrapper<int>>(t1, t2, refsMustBeDifferent: true);
+        }
+
+        [TestMethod]
+        public void Copy_Copies2dArray()
+        {
+            var t1 = new int[,] 
+            { 
+                { 1, 2 },
+                { 3, 4 }, 
+                { 5, 6 },
+            };
+
+            var t2 = t1.Copy();
+            Assert.AreNotSame(t1, t2);
+            AssertArraysAreEqual<int>(t1, t2,false);
+        }
+
+        [TestMethod]
+        public void Copy_Copies2dRefElementArray()
+        {
+            var t1 = new Wrapper<int>[,]
+            {
+                { new Wrapper<int>{ Value = 1 } , new Wrapper<int>{ Value = 2 } },
+                { new Wrapper<int>{ Value = 3 } , new Wrapper<int>{ Value = 4 } },
+                { new Wrapper<int>{ Value = 5 } , new Wrapper<int>{ Value = 6 } },
+            };
+            var t2 = t1.Copy();
+            Assert.AreNotSame(t1, t2);
+            AssertArraysAreEqual<Wrapper<int>>(t1, t2, refsMustBeDifferent: true);
+        }
+
+        [TestMethod]
+        public void Copy_Copies3dArray()
+        {
+            var t1 = new int[,,] 
+            { 
+                { 
+                    { 1, 2 }, 
+                    { 3, 4 }, 
+                    { 5, 6 }
+                }, 
+                { 
+                    { 7, 8 }, 
+                    { 9, 10 }, 
+                    { 11, 12 }
+                }
+            };
+            var t2 = t1.Copy();
+            Assert.AreNotSame(t1, t2);
+            AssertArraysAreEqual<int>(t1, t2,false);
+        }
+
+        [TestMethod]
+        public void Copy_Copies3dRefElementArray()
+        {
+            var t1 = new Wrapper<int>[,,]
+            {
+                {
+                    { new Wrapper<int>{ Value = 1 } , new Wrapper<int>{ Value = 2 } },
+                    { new Wrapper<int>{ Value = 3 } , new Wrapper<int>{ Value = 4 } },
+                    { new Wrapper<int>{ Value = 5 } , new Wrapper<int>{ Value = 6 } },
+                },
+                {
+                    { new Wrapper<int>{ Value = 7 } , new Wrapper<int>{ Value = 8 } },
+                    { new Wrapper<int>{ Value = 9 } , new Wrapper<int>{ Value = 10 } },
+                    { new Wrapper<int>{ Value = 11 } , new Wrapper<int>{ Value = 12 } },
+                }
+            };
+            var t2 = t1.Copy();
+            Assert.AreNotSame(t1, t2);
+            AssertArraysAreEqual<Wrapper<int>>(t1, t2, refsMustBeDifferent: true);
         }
     }
 }
