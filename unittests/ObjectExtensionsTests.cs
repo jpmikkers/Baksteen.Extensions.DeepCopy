@@ -80,8 +80,8 @@ namespace unittests
             IList<MySingleObject> copied = list.Copy();
 
             Assert.AreEqual(2, copied.Count);
-            Assert.AreEqual("1", list[0].One);
-            Assert.AreEqual("2", list[1].One);
+            Assert.AreEqual("1", copied[0].One);
+            Assert.AreEqual("2", copied[1].One);
         }
 
         [TestMethod]
