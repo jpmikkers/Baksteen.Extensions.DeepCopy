@@ -11,28 +11,27 @@ namespace System
     {
         public static T Copy<T>(this T original)
         {
-            return (T)new DeepCopyContext().InternalCopy(original,true);
+            return (T)new DeepCopyContext().InternalCopy(original, true);
         }
 
         private class DeepCopyContext
         {
-            private static readonly Func<object, object> CloneMethod;
-            private readonly Dictionary<Object, Object> m_Visited;
-            private readonly Dictionary<Type, FieldInfo[]> m_NonShallowFieldCache;
+            private static readonly Func<object, object> _cloneMethod;
+            private readonly Dictionary<object, object> _visited;
+            private readonly Dictionary<Type, FieldInfo[]> _nonShallowFieldCache;
 
             static DeepCopyContext()
             {
-                MethodInfo cloneMethod = typeof(Object).GetMethod("MemberwiseClone", BindingFlags.NonPublic | BindingFlags.Instance);
+                MethodInfo cloneMethod = typeof(object).GetMethod("MemberwiseClone", BindingFlags.NonPublic | BindingFlags.Instance);
                 var p1 = Expression.Parameter(typeof(object));
                 var body = Expression.Call(p1, cloneMethod);
-                CloneMethod = Expression.Lambda<Func<object, object>>(body, p1).Compile();
-                //Console.WriteLine("typeof(object) contains {0} nonshallow fields", NonShallowFields(typeof(object)).Count());
+                _cloneMethod = Expression.Lambda<Func<object, object>>(body, p1).Compile();
             }
 
             public DeepCopyContext()
             {
-                m_Visited = new Dictionary<object, object>(new ReferenceEqualityComparer());
-                m_NonShallowFieldCache = new Dictionary<Type, FieldInfo[]>();
+                _visited = new Dictionary<object, object>(new ReferenceEqualityComparer());
+                _nonShallowFieldCache = new Dictionary<Type, FieldInfo[]>();
             }
 
             private static bool IsPrimitiveOrImmutable(Type type)
@@ -54,7 +53,7 @@ namespace System
                 return false;
             }
 
-            public Object InternalCopy(Object originalObject, bool includeInObjectGraph)
+            public object InternalCopy(object originalObject, bool includeInObjectGraph)
             {
                 if (originalObject == null) return null;
                 var typeToReflect = originalObject.GetType();
@@ -65,15 +64,14 @@ namespace System
 
                 if (includeInObjectGraph)
                 {
-                    object result;
-                    if (m_Visited.TryGetValue(originalObject, out result)) return result;
+                    if (_visited.TryGetValue(originalObject, out object result)) return result;
                 }
 
-                var cloneObject = CloneMethod(originalObject);
+                var cloneObject = _cloneMethod(originalObject);
 
                 if (includeInObjectGraph)
                 {
-                    m_Visited.Add(originalObject, cloneObject);
+                    _visited.Add(originalObject, cloneObject);
                 }
 
                 if (typeToReflect.IsArray)
@@ -84,7 +82,7 @@ namespace System
                     {
                         // for an array of primitives, do nothing. The shallow clone is enough.
                     }
-                    else if(arrayElementType.IsValueType)
+                    else if (arrayElementType.IsValueType)
                     {
                         // if its an array of structs, there's no need to check and add the individual elements to 'visited', because in .NET it's impossible to create
                         // references to individual array elements.
@@ -156,14 +154,11 @@ namespace System
 
             private FieldInfo[] CachedNonShallowFields(Type typeToReflect)
             {
-                FieldInfo[] result;
-
-                if(!m_NonShallowFieldCache.TryGetValue(typeToReflect,out result))
+                if (!_nonShallowFieldCache.TryGetValue(typeToReflect, out FieldInfo[] result))
                 {
                     result = NonShallowFields(typeToReflect).ToArray();
-                    m_NonShallowFieldCache[typeToReflect] = result;
+                    _nonShallowFieldCache[typeToReflect] = result;
                 }
-
                 return result;
             }
 
