@@ -16,7 +16,7 @@ public static class DeepCopyObjectExtensions
 
     private class DeepCopyContext
     {
-        private static readonly Func<object, object> _cloneMethod;
+        private static readonly Func<object, object> _shallowClone;
 
         private static readonly HashSet<Type> _immutableValueTypes = new()
         {
@@ -33,7 +33,7 @@ public static class DeepCopyObjectExtensions
             MethodInfo cloneMethod = typeof(object).GetMethod("MemberwiseClone", BindingFlags.NonPublic | BindingFlags.Instance)!;
             var p1 = Expression.Parameter(typeof(object));
             var body = Expression.Call(p1, cloneMethod);
-            _cloneMethod = Expression.Lambda<Func<object, object>>(body, p1).Compile();
+            _shallowClone = Expression.Lambda<Func<object, object>>(body, p1).Compile();
         }
 
         private static bool IsPrimitiveOrImmutable(Type type)
@@ -70,7 +70,7 @@ public static class DeepCopyObjectExtensions
                 if (_visited.TryGetValue(originalObject, out var result)) return result;
             }
 
-            var cloneObject = _cloneMethod(originalObject);
+            var cloneObject = _shallowClone(originalObject);
 
             if (includeInObjectGraph)
             {
