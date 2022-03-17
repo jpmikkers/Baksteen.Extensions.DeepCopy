@@ -17,6 +17,14 @@ public static class DeepCopyObjectExtensions
     private class DeepCopyContext
     {
         private static readonly Func<object, object> _cloneMethod;
+
+        private static readonly HashSet<Type> _immutableValueTypes = new()
+        {
+            typeof(decimal), typeof(Complex), typeof(BigInteger),
+            typeof(Guid),
+            typeof(DateTime), typeof(DateOnly), typeof(TimeOnly), typeof(TimeSpan), typeof(DateTimeOffset),
+        };
+
         private readonly Dictionary<object, object> _visited = new(ReferenceEqualityComparer.Instance);
         private readonly Dictionary<Type, FieldInfo[]> _nonShallowFieldCache = new();
 
@@ -37,16 +45,13 @@ public static class DeepCopyObjectExtensions
             else if (type.IsValueType)
             {
                 if (type.IsEnum) return true;
-                if (type == typeof(decimal)) return true;
-                if (type == typeof(DateTime)) return true;
-                if (type == typeof(DateOnly)) return true;
-                if (type == typeof(TimeOnly)) return true;
-                if (type == typeof(Complex)) return true;
-                if (type == typeof(BigInteger)) return true;
+                return _immutableValueTypes.Contains(type);
             }
             else
             {
-                if (type == typeof(String)) return true;
+                // ref types.. only return true here if the object is DEEPLY immutable, so collections like
+                // ImmutableList<T> don't necessarily qualify because the list items themselves could be mutable.
+                if (type == typeof(string)) return true;
             }
             return false;
         }

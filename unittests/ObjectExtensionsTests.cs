@@ -5,6 +5,7 @@ using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Runtime.CompilerServices;
 using Baksteen.Extensions.DeepCopy;
+using System.Numerics;
 
 namespace unittests
 {
@@ -66,6 +67,41 @@ namespace unittests
             {
                 return Value?.ToString() ?? "";
             }
+        }
+
+        [TestMethod]
+        public void PrimitiveTest()
+        {
+            Assert.IsTrue(typeof(bool).IsPrimitive);
+            Assert.IsTrue(typeof(byte).IsPrimitive);
+            Assert.IsTrue(typeof(sbyte).IsPrimitive);
+            Assert.IsTrue(typeof(char).IsPrimitive);
+            Assert.IsTrue(typeof(short).IsPrimitive);
+            Assert.IsTrue(typeof(ushort).IsPrimitive);
+            Assert.IsTrue(typeof(int).IsPrimitive);
+            Assert.IsTrue(typeof(uint).IsPrimitive);
+            Assert.IsTrue(typeof(nint).IsPrimitive);
+            Assert.IsTrue(typeof(nuint).IsPrimitive);
+            Assert.IsTrue(typeof(long).IsPrimitive);
+            Assert.IsTrue(typeof(ulong).IsPrimitive);
+            Assert.IsTrue(typeof(float).IsPrimitive);
+            Assert.IsTrue(typeof(double).IsPrimitive);
+        }
+
+        [TestMethod]
+        public void NonPrimitiveTest()
+        {
+            Assert.IsFalse(typeof(object).IsPrimitive);
+            Assert.IsFalse(typeof(string).IsPrimitive);
+            Assert.IsFalse(typeof(decimal).IsPrimitive);
+            Assert.IsFalse(typeof(Complex).IsPrimitive);
+            Assert.IsFalse(typeof(BigInteger).IsPrimitive);
+            Assert.IsFalse(typeof(Guid).IsPrimitive);
+            Assert.IsFalse(typeof(DateTime).IsPrimitive);
+            Assert.IsFalse(typeof(DateOnly).IsPrimitive);
+            Assert.IsFalse(typeof(TimeOnly).IsPrimitive);
+            Assert.IsFalse(typeof(TimeSpan).IsPrimitive);
+            Assert.IsFalse(typeof(DateTimeOffset).IsPrimitive);
         }
 
         [TestMethod]
