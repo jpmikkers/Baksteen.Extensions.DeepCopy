@@ -1,13 +1,10 @@
-﻿#region
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Runtime.CompilerServices;
-
-#endregion
+using Baksteen.Extensions.DeepCopy;
 
 namespace unittests
 {
@@ -16,8 +13,8 @@ namespace unittests
     {
         private class MySingleObject
         {
-            public string One;
-            private int two;
+            public string One = "single one";
+            private int two = 2;
 
             public int Two
             {
@@ -28,8 +25,8 @@ namespace unittests
 
         private class MyNestedObject
         {
-            public MySingleObject Single;
-            public string Meta;
+            public MySingleObject Single = new MySingleObject();
+            public string Meta = "metadata";
         }
 
         private class OverriddenHash
@@ -47,14 +44,14 @@ namespace unittests
         /// <typeparam name="T">Type to be encapsulated</typeparam>
         private class Wrapper<T> : IEquatable<Wrapper<T>>
         {
-            public T Value{ get; set; }
+            public T Value { get; set; } = default!;
 
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 return Equals(obj as Wrapper<T>);
             }
 
-            public bool Equals(Wrapper<T> other)
+            public bool Equals(Wrapper<T>? other)
             {
                 return other != null &&
                        EqualityComparer<T>.Default.Equals(Value, other.Value);
@@ -62,12 +59,12 @@ namespace unittests
 
             public override int GetHashCode()
             {
-                return -1937169414 + EqualityComparer<T>.Default.GetHashCode(Value);
+                return -1937169414 + EqualityComparer<T>.Default.GetHashCode(Value!);
             }
 
             public override string ToString()
             {
-                return Value.ToString();
+                return Value?.ToString() ?? "";
             }
         }
 
@@ -79,25 +76,25 @@ namespace unittests
                     <child attrib='wow'>hi</child>
                     <child attrib='yeah'>hello</child>
                 </root>");
-            XElement copied = el.Copy();
+            XElement copied = el.DeepCopy()!;
 
             var children = copied.Elements("child").ToList();
             Assert.AreEqual(2, children.Count);
-            Assert.AreEqual("wow", children[0].Attribute("attrib").Value);
+            Assert.AreEqual("wow", children[0].Attribute("attrib")!.Value);
             Assert.AreEqual("hi", children[0].Value);
 
-            Assert.AreEqual("yeah", children[1].Attribute("attrib").Value);
+            Assert.AreEqual("yeah", children[1].Attribute("attrib")!.Value);
             Assert.AreEqual("hello", children[1].Value);
         }
 
         [TestMethod]
         public void Copy_CopiesNestedObject()
         {
-            MyNestedObject copied =
-                new MyNestedObject() {Meta = "metadata", Single = new MySingleObject() {One = "single_one"}}.Copy();
+            MyNestedObject copied = new MyNestedObject();
 
             Assert.AreEqual("metadata", copied.Meta);
-            Assert.AreEqual("single_one", copied.Single.One);
+            Assert.AreEqual("single one", copied.Single.One);
+            Assert.AreEqual(2, copied.Single.Two);
         }
 
         [TestMethod]
@@ -108,7 +105,7 @@ namespace unittests
                 new MySingleObject() {One = "1"},
                 new MySingleObject() {One = "2"}
             };
-            IList<MySingleObject> copied = list.Copy();
+            IList<MySingleObject> copied = list.DeepCopy()!;
 
             Assert.AreEqual(2, copied.Count);
             Assert.AreEqual("1", copied[0].One);
@@ -118,17 +115,17 @@ namespace unittests
         [TestMethod]
         public void Copy_CopiesSingleObject()
         {
-            MySingleObject copied = new MySingleObject() {One = "one", Two = 2}.Copy();
+            MySingleObject copied = new MySingleObject().DeepCopy()!;
 
-            Assert.AreEqual("one", copied.One);
+            Assert.AreEqual("single one", copied.One);
             Assert.AreEqual(2, copied.Two);
         }
 
         [TestMethod]
         public void Copy_CopiesSingleBuiltInObjects()
         {
-            Assert.AreEqual("hello there", "hello there".Copy());
-            Assert.AreEqual(123, 123.Copy());
+            Assert.AreEqual("hello there", "hello there".DeepCopy());
+            Assert.AreEqual(123, 123.DeepCopy());
         }
 
         [TestMethod]
@@ -136,7 +133,7 @@ namespace unittests
         {
             object[] arr = new object[1];
             arr[0] = arr;
-            var copy=arr.Copy();
+            var copy = arr.DeepCopy()!;
             Assert.ReferenceEquals(copy, copy[0]);
         }
 
@@ -144,7 +141,7 @@ namespace unittests
         public void ReferenceEqualityComparerShouldNotUseOverriddenHash()
         {
             var t = new OverriddenHash();
-            var equalityComparer = new ReferenceEqualityComparer();
+            var equalityComparer = ReferenceEqualityComparer.Instance;
             Assert.AreNotEqual(42, equalityComparer.GetHashCode(t));
             Assert.AreEqual(equalityComparer.GetHashCode(t), RuntimeHelpers.GetHashCode(t));
         }
@@ -158,14 +155,14 @@ namespace unittests
             }
         }
 
-        static void AssertArraysAreEqual<T>(Array array1,Array array2,bool refsMustBeDifferent)
+        static void AssertArraysAreEqual<T>(Array array1, Array array2, bool refsMustBeDifferent)
         {
             Assert.AreEqual(array1.GetType(), array2.GetType());
             Assert.AreEqual(array1.LongLength, array2.LongLength);
 
-            foreach(var v in ToIEnumerable<T>(array1).Zip(
+            foreach (var v in ToIEnumerable<T>(array1).Zip(
                 ToIEnumerable<T>(array2),
-                (x, y) => new { x, y } ))
+                (x, y) => new { x, y }))
             {
                 Assert.AreEqual(v.x, v.y);
                 if (refsMustBeDifferent) Assert.AreNotSame(v.x, v.y);
@@ -175,10 +172,10 @@ namespace unittests
         [TestMethod]
         public void Copy_Copies1dArray()
         {
-            var t1 = new int[]{ 1, 2, 3 };
-            var t2 = t1.Copy();
+            var t1 = new int[] { 1, 2, 3 };
+            var t2 = t1.DeepCopy()!;
             Assert.AreNotSame(t1, t2);
-            AssertArraysAreEqual<int>(t1, t2,false);
+            AssertArraysAreEqual<int>(t1, t2, false);
         }
 
         [TestMethod]
@@ -190,7 +187,7 @@ namespace unittests
                 new Wrapper<int>{ Value = 2 } ,
                 new Wrapper<int>{ Value = 3 } ,
             };
-            var t2 = t1.Copy();
+            var t2 = t1.DeepCopy()!;
             Assert.AreNotSame(t1, t2);
             AssertArraysAreEqual<Wrapper<int>>(t1, t2, refsMustBeDifferent: true);
         }
@@ -198,16 +195,16 @@ namespace unittests
         [TestMethod]
         public void Copy_Copies2dArray()
         {
-            var t1 = new int[,] 
-            { 
+            var t1 = new int[,]
+            {
                 { 1, 2 },
-                { 3, 4 }, 
+                { 3, 4 },
                 { 5, 6 },
             };
 
-            var t2 = t1.Copy();
+            var t2 = t1.DeepCopy()!;
             Assert.AreNotSame(t1, t2);
-            AssertArraysAreEqual<int>(t1, t2,false);
+            AssertArraysAreEqual<int>(t1, t2, false);
         }
 
         [TestMethod]
@@ -219,7 +216,7 @@ namespace unittests
                 { new Wrapper<int>{ Value = 3 } , new Wrapper<int>{ Value = 4 } },
                 { new Wrapper<int>{ Value = 5 } , new Wrapper<int>{ Value = 6 } },
             };
-            var t2 = t1.Copy();
+            var t2 = t1.DeepCopy()!;
             Assert.AreNotSame(t1, t2);
             AssertArraysAreEqual<Wrapper<int>>(t1, t2, refsMustBeDifferent: true);
         }
@@ -227,22 +224,22 @@ namespace unittests
         [TestMethod]
         public void Copy_Copies3dArray()
         {
-            var t1 = new int[,,] 
-            { 
-                { 
-                    { 1, 2 }, 
-                    { 3, 4 }, 
+            var t1 = new int[,,]
+            {
+                {
+                    { 1, 2 },
+                    { 3, 4 },
                     { 5, 6 }
-                }, 
-                { 
-                    { 7, 8 }, 
-                    { 9, 10 }, 
+                },
+                {
+                    { 7, 8 },
+                    { 9, 10 },
                     { 11, 12 }
                 }
             };
-            var t2 = t1.Copy();
+            var t2 = t1.DeepCopy()!;
             Assert.AreNotSame(t1, t2);
-            AssertArraysAreEqual<int>(t1, t2,false);
+            AssertArraysAreEqual<int>(t1, t2, false);
         }
 
         [TestMethod]
@@ -261,7 +258,7 @@ namespace unittests
                     { new Wrapper<int>{ Value = 11 } , new Wrapper<int>{ Value = 12 } },
                 }
             };
-            var t2 = t1.Copy();
+            var t2 = t1.DeepCopy()!;
             Assert.AreNotSame(t1, t2);
             AssertArraysAreEqual<Wrapper<int>>(t1, t2, refsMustBeDifferent: true);
         }
