@@ -196,12 +196,18 @@ namespace unittests
             Assert.AreEqual(array1.GetType(), array2.GetType());
             Assert.AreEqual(array1.LongLength, array2.LongLength);
 
-            foreach (var v in ToIEnumerable<T>(array1).Zip(
-                ToIEnumerable<T>(array2),
-                (x, y) => new { x, y }))
+            var counts1 = Enumerable.Range(0, array1.Rank).Select(array1.GetLongLength).ToArray();
+            var counts2 = Enumerable.Range(0, array2.Rank).Select(array2.GetLongLength).ToArray();
+
+            foreach(var (First, Second) in counts1.Zip(counts2))
             {
-                Assert.AreEqual(v.x, v.y);
-                if (refsMustBeDifferent) Assert.AreNotSame(v.x, v.y);
+                Assert.AreEqual(First, Second);
+            }
+
+            foreach (var (x,y) in ToIEnumerable<T>(array1).Zip(ToIEnumerable<T>(array2)))
+            {
+                Assert.AreEqual(x, y);
+                if (refsMustBeDifferent) Assert.AreNotSame(x, y);
             }
         }
 
