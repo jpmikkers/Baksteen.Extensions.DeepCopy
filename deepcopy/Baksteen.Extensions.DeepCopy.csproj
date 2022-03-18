@@ -4,10 +4,16 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Version>1.0.0</Version>
     <RootNamespace>Baksteen.Extensions.DeepCopy</RootNamespace>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>clone;deepclone;copy;deepcopy;reflection;extension</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Authors>jpmikkers</Authors>
+    <Description>Small but effective deep copy extension using object reflection. 
+It has various optimizations so it remains surprisingly fast, about 7 times faster than the usual binary serialization/deserialization trick.</Description>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/jpmikkers/Baksteen.Extensions.DeepCopy.git</RepositoryUrl>
   </PropertyGroup>
 
 </Project>
