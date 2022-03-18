@@ -14,6 +14,9 @@
 It has various optimizations so it remains surprisingly fast, about 7 times faster than the usual binary serialization/deserialization trick.</Description>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/jpmikkers/Baksteen.Extensions.DeepCopy.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/jpmikkers/Baksteen.Extensions.DeepCopy</PackageProjectUrl>
+    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+    <Copyright>Copyright (c) JPMikkers 2022</Copyright>
   </PropertyGroup>
 
 </Project>
