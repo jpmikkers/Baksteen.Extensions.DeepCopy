@@ -9,6 +9,16 @@ The speedup is achieved via the following techniques:
 - to improve locality of reference, process the 'fast' dimensions or multidimensional arrays in the __inner__ loops
 - use a compiled lamba expression to call MemberwiseClone
 
+## How to use:
+
+    using Baksteen.Extensions.DeepCopy;
+    ...
+    var myobject = new SomeClass();
+    ...
+    var myclone = myobject.DeepCopy()!;    // creates a new deep copy of the original object 
+
+Note: the exclamation mark (null-forgiving operator) is only required if you enabled nullable referency types in your project
+
 ## Contributors:
 - Alexey Burtsev (original deep copy code)
 - Wouter Groeneveld (unit tests & XElement copy)

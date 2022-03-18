@@ -17,6 +17,14 @@ It has various optimizations so it remains surprisingly fast, about 7 times fast
     <PackageProjectUrl>https://github.com/jpmikkers/Baksteen.Extensions.DeepCopy</PackageProjectUrl>
     <PackageReleaseNotes>Initial release</PackageReleaseNotes>
     <Copyright>Copyright (c) JPMikkers 2022</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>
