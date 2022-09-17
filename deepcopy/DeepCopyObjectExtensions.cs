@@ -20,9 +20,10 @@ public static class DeepCopyObjectExtensions
 
         private static readonly HashSet<Type> _immutableValueTypes = new()
         {
-            typeof(decimal), typeof(Complex), typeof(BigInteger),
+            typeof(Half), typeof(decimal), typeof(Complex), typeof(BigInteger),
             typeof(Guid),
             typeof(DateTime), typeof(DateOnly), typeof(TimeOnly), typeof(TimeSpan), typeof(DateTimeOffset),
+            typeof(Range), typeof(Index),
         };
 
         private readonly Dictionary<object, object> _visited = new(ReferenceEqualityComparer.Instance);

@@ -86,6 +86,8 @@ namespace unittests
             Assert.IsTrue(typeof(ulong).IsPrimitive);
             Assert.IsTrue(typeof(float).IsPrimitive);
             Assert.IsTrue(typeof(double).IsPrimitive);
+            Assert.IsTrue(typeof(IntPtr).IsPrimitive);
+            Assert.IsTrue(typeof(UIntPtr).IsPrimitive);
         }
 
         [TestMethod]
@@ -93,6 +95,7 @@ namespace unittests
         {
             Assert.IsFalse(typeof(object).IsPrimitive);
             Assert.IsFalse(typeof(string).IsPrimitive);
+            Assert.IsFalse(typeof(Half).IsPrimitive);
             Assert.IsFalse(typeof(decimal).IsPrimitive);
             Assert.IsFalse(typeof(Complex).IsPrimitive);
             Assert.IsFalse(typeof(BigInteger).IsPrimitive);
@@ -102,6 +105,8 @@ namespace unittests
             Assert.IsFalse(typeof(TimeOnly).IsPrimitive);
             Assert.IsFalse(typeof(TimeSpan).IsPrimitive);
             Assert.IsFalse(typeof(DateTimeOffset).IsPrimitive);
+            Assert.IsFalse(typeof(Range).IsPrimitive);
+            Assert.IsFalse(typeof(Index).IsPrimitive);
         }
 
         [TestMethod]
