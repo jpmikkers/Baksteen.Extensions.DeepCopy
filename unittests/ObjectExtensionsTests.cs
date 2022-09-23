@@ -110,6 +110,27 @@ namespace unittests
         }
 
         [TestMethod]
+        public void Copy_ShouldNotDeepCopyTypeInstances()
+        {
+            var t1 = typeof(MySingleObject);
+            var t2 = t1.DeepCopy()!;
+            Assert.AreSame(t1, t2);
+
+            t1 = typeof(MySingleObject).GetType();
+            t2 = t1.DeepCopy()!;
+            Assert.AreSame(t1, t2);
+        }
+
+        [TestMethod]
+        public void Copy_ShouldNotDeepCopyTypeFields()
+        {
+            var t1 = new { TypeField = typeof(MySingleObject) };
+            var t2 = t1.DeepCopy()!;
+            Assert.AreNotSame(t1, t2);
+            Assert.AreSame(t1.TypeField, t2.TypeField);
+        }
+
+        [TestMethod]
         public void Copy_XElementWithChildren()
         {
             XElement el = XElement.Parse(@"
