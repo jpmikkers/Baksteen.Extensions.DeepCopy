@@ -60,13 +60,12 @@ public static class DeepCopyObjectExtensions
         public object? InternalCopy(object? originalObject, bool includeInObjectGraph)
         {
             if (originalObject == null) return null;
-            if (originalObject is Type) return originalObject;
 
             var typeToReflect = originalObject.GetType();
-            if (IsPrimitiveOrImmutable(typeToReflect)) return originalObject;
+            if (IsPrimitiveOrImmutable(typeToReflect) || originalObject is Type) return originalObject;
 
-            if (typeof(XElement).IsAssignableFrom(typeToReflect)) return new XElement((XElement)originalObject);
-            if (typeof(Delegate).IsAssignableFrom(typeToReflect)) return null;
+            if(typeof(XElement).IsAssignableFrom(typeToReflect)) return new XElement((XElement)originalObject);
+            if(typeof(Delegate).IsAssignableFrom(typeToReflect)) return null;
 
             if (includeInObjectGraph)
             {
