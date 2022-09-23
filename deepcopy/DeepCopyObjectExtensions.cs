@@ -60,6 +60,8 @@ public static class DeepCopyObjectExtensions
         public object? InternalCopy(object? originalObject, bool includeInObjectGraph)
         {
             if (originalObject == null) return null;
+            if (originalObject is Type) return originalObject;
+
             var typeToReflect = originalObject.GetType();
             if (IsPrimitiveOrImmutable(typeToReflect)) return originalObject;
 
