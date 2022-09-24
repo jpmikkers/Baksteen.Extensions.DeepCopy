@@ -12,7 +12,7 @@ namespace unittests
     [TestClass]
     public class ObjectExtensionsTests
     {
-        private class MySingleObject
+        private class MySingleObject : IEquatable<MySingleObject?>
         {
             public string One = "single one";
             private int two = 2;
@@ -21,6 +21,24 @@ namespace unittests
             {
                 get { return two; }
                 set { two = value; }
+            }
+
+            public override bool Equals(object? obj)
+            {
+                return Equals(obj as MySingleObject);
+            }
+
+            public bool Equals(MySingleObject? other)
+            {
+                return other is not null &&
+                       One == other.One &&
+                       two == other.two &&
+                       Two == other.Two;
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(One, two, Two);
             }
         }
 
@@ -329,6 +347,28 @@ namespace unittests
             var t2 = t1.DeepCopy()!;
             Assert.AreNotSame(t1, t2);
             AssertArraysAreEqual<Wrapper<int>>(t1, t2, refsMustBeDifferent: true);
+        }
+
+        [TestMethod]
+        public void Copy_DeepCopiesMutableFieldsOfValueTypes()
+        {
+            // Tuple itself is a mutable valuetype, MySingleObject is a mutable reference type
+            var a = new Tuple<MySingleObject>(new MySingleObject());
+            var b = a.DeepCopy()!;
+            Assert.AreNotSame(a.Item1, b.Item1);
+            Assert.AreEqual(a.Item1, b.Item1);
+            Assert.AreEqual(a, b);
+        }
+
+        [TestMethod]
+        public void Copy_ShallowCopiesImmutableFieldsOfValueTypes()
+        {            
+            // Tuple itself is a mutable valuetype, string is an immutable reference type
+            var a = new Tuple<string>("U0FGZSBpcyBTaGl0dHkgQWdpbGUgRm9yIEVudGVycHJpc2VzIQ==");
+            var b = a.DeepCopy()!;
+            Assert.AreSame(a.Item1, b.Item1);
+            Assert.AreEqual(a.Item1, b.Item1);
+            Assert.AreEqual(a, b);
         }
     }
 }
