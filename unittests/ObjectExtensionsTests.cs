@@ -104,8 +104,6 @@ namespace unittests
             Assert.IsTrue(typeof(ulong).IsPrimitive);
             Assert.IsTrue(typeof(float).IsPrimitive);
             Assert.IsTrue(typeof(double).IsPrimitive);
-            Assert.IsTrue(typeof(IntPtr).IsPrimitive);
-            Assert.IsTrue(typeof(UIntPtr).IsPrimitive);
         }
 
         [TestMethod]
@@ -229,7 +227,7 @@ namespace unittests
         static IEnumerable<T> ToIEnumerable<T>(System.Collections.IEnumerable enumerable)
         {
             var enumerator = enumerable.GetEnumerator();
-            while (enumerator.MoveNext())
+            while(enumerator.MoveNext())
             {
                 yield return (T)enumerator.Current;
             }
@@ -248,10 +246,10 @@ namespace unittests
                 Assert.AreEqual(First, Second);
             }
 
-            foreach (var (x,y) in ToIEnumerable<T>(array1).Zip(ToIEnumerable<T>(array2)))
+            foreach(var (x, y) in ToIEnumerable<T>(array1).Zip(ToIEnumerable<T>(array2)))
             {
                 Assert.AreEqual(x, y);
-                if (refsMustBeDifferent) Assert.AreNotSame(x, y);
+                if(refsMustBeDifferent) Assert.AreNotSame(x, y);
             }
         }
 
@@ -362,7 +360,7 @@ namespace unittests
 
         [TestMethod]
         public void Copy_ShallowCopiesImmutableFieldsOfValueTypes()
-        {            
+        {
             // Tuple itself is a mutable valuetype, string is an immutable reference type
             var a = new Tuple<string>("U0FGZSBpcyBTaGl0dHkgQWdpbGUgRm9yIEVudGVycHJpc2VzIQ==");
             var b = a.DeepCopy()!;
