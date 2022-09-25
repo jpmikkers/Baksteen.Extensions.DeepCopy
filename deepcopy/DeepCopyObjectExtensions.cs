@@ -18,76 +18,107 @@ public static class DeepCopyObjectExtensions
     {
         private static readonly Func<object, object> _shallowClone;
 
-        private static readonly HashSet<Type> _immutableValueTypes = new()
+        // Set of deeply immutable types. This includes all primitives, some known immutable valuetypes, 
+        // and a few sealed immutable reference types such as 'string', 'DBNull' and 'Version'.
+        // Nullable<T> of an immutable valuetype T is itself immutable as well but rather than duplicating all those entries here,
+        // they are added programmatically in the static constructor below.
+        private static readonly HashSet<Type> _immutableTypes = new()
         {
-            typeof(Half), typeof(decimal), typeof(Complex), typeof(BigInteger),
+            typeof(nint),
+            typeof(nuint),
+            typeof(bool),
+            typeof(byte),
+            typeof(sbyte),
+            typeof(char),
+            typeof(short),
+            typeof(ushort),
+            typeof(int),
+            typeof(uint),
+            typeof(long),
+            typeof(ulong),
+            typeof(float),
+            typeof(double),
+            typeof(Half),
+            typeof(decimal),
+            typeof(Complex),
+            typeof(BigInteger),
             typeof(Guid),
-            typeof(DateTime), typeof(DateOnly), typeof(TimeOnly), typeof(TimeSpan), typeof(DateTimeOffset),
-            typeof(Range), typeof(Index),
+            typeof(DateTime),
+            typeof(DateOnly),
+            typeof(TimeOnly),
+            typeof(TimeSpan),
+            typeof(DateTimeOffset),
+            typeof(Range),
+            typeof(Index),
+            typeof(string),
+            typeof(DBNull),
+            typeof(Version),
         };
 
+        // to handle object graphs containing cycles, _visited keeps track of instances we've already cloned
         private readonly Dictionary<object, object> _visited = new(ReferenceEqualityComparer.Instance);
+
         private readonly Dictionary<Type, FieldInfo[]> _nonShallowFieldCache = new();
 
         static DeepCopyContext()
         {
-            MethodInfo cloneMethod = typeof(object).GetMethod("MemberwiseClone", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            var cloneMethod = typeof(object).GetMethod("MemberwiseClone", BindingFlags.NonPublic | BindingFlags.Instance)!;
             var p1 = Expression.Parameter(typeof(object));
             var body = Expression.Call(p1, cloneMethod);
             _shallowClone = Expression.Lambda<Func<object, object>>(body, p1).Compile();
+
+            // Nullable<T> of deeply immutable valuetypes are themselves deeply immutable
+            foreach(var type in _immutableTypes.Where(t => t.IsValueType).ToList())
+            {
+                _immutableTypes.Add(typeof(Nullable<>).MakeGenericType(type));
+            }
         }
 
-        private static bool IsPrimitiveOrImmutable(Type type)
+        private static bool IsDeeplyImmutable(Type type)
         {
-            if (type.IsPrimitive)
+            // now that all primitives are included in the _immutableTypes set, the 'type.IsPrimitive' test is not really
+            // necessary, but I'll leave it in because it's a tiny bit faster than looking up items in the hashset.
+            if(type.IsPrimitive || type.IsEnum)
             {
                 return true;
             }
-            else if (type.IsValueType)
-            {
-                if (type.IsEnum) return true;
-                return _immutableValueTypes.Contains(type);
-            }
             else
             {
-                // ref types.. only return true here if the object is DEEPLY immutable, so collections like
-                // ImmutableList<T> don't necessarily qualify because the list items themselves could be mutable.
-                if (type == typeof(string)) return true;
+                return _immutableTypes.Contains(type);
             }
-            return false;
         }
 
         public object? InternalCopy(object? originalObject, bool includeInObjectGraph)
         {
-            if (originalObject == null) return null;
+            if(originalObject == null) return null;
 
             var typeToReflect = originalObject.GetType();
-            if (IsPrimitiveOrImmutable(typeToReflect) || originalObject is Type) return originalObject;
+            if(IsDeeplyImmutable(typeToReflect) || originalObject is Type) return originalObject;
 
             if(typeof(XElement).IsAssignableFrom(typeToReflect)) return new XElement((XElement)originalObject);
             if(typeof(Delegate).IsAssignableFrom(typeToReflect)) return null;
 
-            if (includeInObjectGraph)
+            if(includeInObjectGraph)
             {
-                if (_visited.TryGetValue(originalObject, out var result)) return result;
+                if(_visited.TryGetValue(originalObject, out var result)) return result;
             }
 
             var cloneObject = _shallowClone(originalObject);
 
-            if (includeInObjectGraph)
+            if(includeInObjectGraph)
             {
                 _visited.Add(originalObject, cloneObject);
             }
 
-            if (typeToReflect.IsArray)
+            if(typeToReflect.IsArray)
             {
                 var arrayElementType = typeToReflect.GetElementType()!;
 
-                if (IsPrimitiveOrImmutable(arrayElementType))
+                if(IsDeeplyImmutable(arrayElementType))
                 {
                     // for an array of primitives, do nothing. The shallow clone is enough.
                 }
-                else if (arrayElementType.IsValueType)
+                else if(arrayElementType.IsValueType)
                 {
                     // if its an array of structs, there's no need to check and add the individual elements to 'visited', because in .NET it's impossible to create
                     // references to individual array elements.
@@ -101,7 +132,7 @@ public static class DeepCopyObjectExtensions
             }
             else
             {
-                foreach (var fieldInfo in CachedNonShallowFields(typeToReflect))
+                foreach(var fieldInfo in CachedNonShallowFields(typeToReflect))
                 {
                     var originalFieldValue = fieldInfo.GetValue(originalObject);
                     // a valuetype field can never have a reference pointing to it, so don't check the object graph in that case
@@ -117,10 +148,10 @@ public static class DeepCopyObjectExtensions
         {
             int len = counts[dimension];
 
-            if (dimension < (counts.Length - 1))
+            if(dimension < (counts.Length - 1))
             {
                 // not the final dimension, loop the range, and recursively handle one dimension higher
-                for (int t = 0; t < len; t++)
+                for(int t = 0; t < len; t++)
                 {
                     indices[dimension] = t;
                     ReplaceArrayElements(array, func, dimension + 1, counts, indices);
@@ -129,7 +160,7 @@ public static class DeepCopyObjectExtensions
             else
             {
                 // we've reached the final dimension where the elements are closest together in memory. Do a final loop.
-                for (int t = 0; t < len; t++)
+                for(int t = 0; t < len; t++)
                 {
                     indices[dimension] = t;
                     array.SetValue(func(array.GetValue(indices)), indices);
@@ -139,11 +170,11 @@ public static class DeepCopyObjectExtensions
 
         private static void ReplaceArrayElements(Array array, Func<object?, object?> func)
         {
-            if (array.Rank == 1)
+            if(array.Rank == 1)
             {
                 // do a fast loop for the common case, a one dimensional array
                 int len = array.GetLength(0);
-                for (int t = 0; t < len; t++)
+                for(int t = 0; t < len; t++)
                 {
                     array.SetValue(func(array.GetValue(t)), t);
                 }
@@ -159,7 +190,7 @@ public static class DeepCopyObjectExtensions
 
         private FieldInfo[] CachedNonShallowFields(Type typeToReflect)
         {
-            if (!_nonShallowFieldCache.TryGetValue(typeToReflect, out var result))
+            if(!_nonShallowFieldCache.TryGetValue(typeToReflect, out var result))
             {
                 result = NonShallowFields(typeToReflect).ToArray();
                 _nonShallowFieldCache[typeToReflect] = result;
@@ -174,11 +205,11 @@ public static class DeepCopyObjectExtensions
         /// <returns></returns>
         private static IEnumerable<FieldInfo> NonShallowFields(Type typeToReflect)
         {
-            while (typeToReflect.BaseType != null)
+            while(typeToReflect.BaseType != null)
             {
-                foreach (var fieldInfo in typeToReflect.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly))
+                foreach(var fieldInfo in typeToReflect.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly))
                 {
-                    if (IsPrimitiveOrImmutable(fieldInfo.FieldType)) continue; // this is 5% faster than a where clause..
+                    if(IsDeeplyImmutable(fieldInfo.FieldType)) continue; // this is 5% faster than a where clause..
                     yield return fieldInfo;
                 }
                 typeToReflect = typeToReflect.BaseType;
@@ -186,4 +217,3 @@ public static class DeepCopyObjectExtensions
         }
     }
 }
-
