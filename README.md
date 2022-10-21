@@ -11,13 +11,15 @@ The speedup is achieved via the following techniques:
 
 ## How to use:
 
+Use NuGet package manager to add the package [Baksteen.Extensions.DeepCopy](https://www.nuget.org/packages/Baksteen.Extensions.DeepCopy) to your project. Then:
+
     using Baksteen.Extensions.DeepCopy;
     ...
     var myobject = new SomeClass();
     ...
     var myclone = myobject.DeepCopy()!;    // creates a new deep copy of the original object 
 
-Note: the exclamation mark (null-forgiving operator) is only required if you enabled nullable referency types in your project
+Note: the exclamation mark (null-forgiving operator) is only required if you enabled nullable reference types in your project
 
 ## Contributors:
 - Alexey Burtsev (original deep copy code)
