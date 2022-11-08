@@ -15,7 +15,7 @@ It has various optimizations so it remains surprisingly fast, about 7 times fast
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/jpmikkers/Baksteen.Extensions.DeepCopy.git</RepositoryUrl>
     <PackageProjectUrl>https://github.com/jpmikkers/Baksteen.Extensions.DeepCopy</PackageProjectUrl>
-    <PackageReleaseNotes>Added Half, Range and Index as immutable types.</PackageReleaseNotes>
+    <PackageReleaseNotes>Speed up cloning of objects containing nullable primitives, added support for dotnet 7.</PackageReleaseNotes>
     <Copyright>Copyright (c) JPMikkers 2022</Copyright>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
