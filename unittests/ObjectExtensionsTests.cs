@@ -126,6 +126,14 @@ namespace unittests
         }
 
         [TestMethod]
+        public void Copy_Null()
+        {
+            object? t1 = null;
+            var t2 = t1.DeepCopy();
+            Assert.IsNull(t2);
+        }
+
+        [TestMethod]
         public void Copy_ShouldNotDeepCopyTypeInstances()
         {
             var t1 = typeof(MySingleObject);
@@ -144,6 +152,43 @@ namespace unittests
             var t2 = t1.DeepCopy()!;
             Assert.AreNotSame(t1, t2);
             Assert.AreSame(t1.TypeField, t2.TypeField);
+        }
+
+        [TestMethod]
+        public void Copy_ShouldNotDeepCopyImmutableTypes()
+        {
+            static void SubTest(object? v) => Assert.AreSame(v, v.DeepCopy());
+
+            SubTest(new nint());
+            SubTest(new nuint());
+            SubTest(new bool());
+            SubTest(new byte());
+            SubTest(new sbyte());
+            SubTest(new char());
+            SubTest(new short());
+            SubTest(new ushort());
+            SubTest(new int());
+            SubTest(new uint());
+            SubTest(new long());
+            SubTest(new ulong());
+            SubTest(new float());
+            SubTest(new double());
+            SubTest(new Half());
+            SubTest(new decimal());
+            SubTest(new Complex());
+            SubTest(new BigInteger());
+            SubTest(new Guid());
+            SubTest(new DateTime());
+            SubTest(new DateOnly());
+            SubTest(new TimeOnly());
+            SubTest(new TimeSpan());
+            SubTest(new DateTimeOffset());
+            SubTest(new Range());
+            SubTest(new Index());
+            SubTest(new string(""));
+            SubTest(DBNull.Value);
+            SubTest(new Version());
+            SubTest(new Uri(@"http://localhost:80"));
         }
 
         [TestMethod]
@@ -350,9 +395,10 @@ namespace unittests
         [TestMethod]
         public void Copy_DeepCopiesMutableFieldsOfValueTypes()
         {
-            // Tuple itself is a mutable valuetype, MySingleObject is a mutable reference type
+            // Tuple itself is an immutable valuetype, MySingleObject is a mutable reference type
             var a = new Tuple<MySingleObject>(new MySingleObject());
             var b = a.DeepCopy()!;
+            Assert.AreNotSame(a, b);
             Assert.AreNotSame(a.Item1, b.Item1);
             Assert.AreEqual(a.Item1, b.Item1);
             Assert.AreEqual(a, b);
@@ -361,9 +407,10 @@ namespace unittests
         [TestMethod]
         public void Copy_ShallowCopiesImmutableFieldsOfValueTypes()
         {
-            // Tuple itself is a mutable valuetype, string is an immutable reference type
+            // Tuple itself is an immutable valuetype, string is an immutable reference type
             var a = new Tuple<string>("U0FGZSBpcyBTaGl0dHkgQWdpbGUgRm9yIEVudGVycHJpc2VzIQ==");
             var b = a.DeepCopy()!;
+            Assert.AreNotSame(a, b);
             Assert.AreSame(a.Item1, b.Item1);
             Assert.AreEqual(a.Item1, b.Item1);
             Assert.AreEqual(a, b);
