@@ -4,7 +4,7 @@
     <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <RootNamespace>Baksteen.Extensions.DeepCopy</RootNamespace>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>clone;deepclone;copy;deepcopy;reflection;extension</PackageTags>
@@ -15,8 +15,8 @@ It has various optimizations so it remains surprisingly fast, about 7 times fast
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/jpmikkers/Baksteen.Extensions.DeepCopy.git</RepositoryUrl>
     <PackageProjectUrl>https://github.com/jpmikkers/Baksteen.Extensions.DeepCopy</PackageProjectUrl>
-    <PackageReleaseNotes>Speed up cloning of objects containing nullable primitives, added support for dotnet 7.</PackageReleaseNotes>
-    <Copyright>Copyright (c) JPMikkers 2022</Copyright>
+    <PackageReleaseNotes>Added System.Uri as immutable, added support for dotnet 8.</PackageReleaseNotes>
+    <Copyright>Copyright (c) JPMikkers 2023</Copyright>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
