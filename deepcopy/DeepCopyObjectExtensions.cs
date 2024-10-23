@@ -18,10 +18,11 @@ public static class DeepCopyObjectExtensions
     {
         private static readonly Func<object, object> _shallowClone;
 
-        // Set of deeply immutable types. This includes all primitives, some known immutable valuetypes, 
-        // and a few sealed immutable reference types such as 'string', 'DBNull' and 'Version'.
-        // Nullable<T> of an immutable valuetype T is itself immutable as well but rather than duplicating all those entries here,
-        // they are added programmatically in the static constructor below.
+        // Set of deeply immutable types. This includes all primitives, some known immutable
+        // valuetypes, and a few sealed immutable reference types such as 'string', 'DBNull' and
+        // 'Version'. Nullable<T> of an immutable valuetype T is itself immutable as well but rather
+        // than duplicating all those entries here, they are added programmatically in the static
+        // constructor below.
         private static readonly HashSet<Type> _immutableTypes = new()
         {
             typeof(nint),
@@ -40,8 +41,15 @@ public static class DeepCopyObjectExtensions
             typeof(double),
             typeof(Half),
             typeof(decimal),
-            typeof(Complex),
             typeof(BigInteger),
+            typeof(Vector2),
+            typeof(Vector3),
+            typeof(Vector4),
+            typeof(Matrix3x2),
+            typeof(Matrix4x4),
+            typeof(Complex),
+            typeof(Quaternion),
+            typeof(Plane),
             typeof(Guid),
             typeof(DateTime),
             typeof(DateOnly),
@@ -79,14 +87,9 @@ public static class DeepCopyObjectExtensions
         {
             // now that all primitives are included in the _immutableTypes set, the 'type.IsPrimitive' test is not really
             // necessary, but I'll leave it in because it's a tiny bit faster than looking up items in the hashset.
-            if(type.IsPrimitive || type.IsEnum)
-            {
-                return true;
-            }
-            else
-            {
-                return _immutableTypes.Contains(type);
-            }
+            return type.IsPrimitive
+                   || type.IsEnum
+                   || _immutableTypes.Contains(type);
         }
 
         public object? InternalCopy(object? originalObject, bool includeInObjectGraph)
