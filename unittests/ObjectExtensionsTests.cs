@@ -176,6 +176,13 @@ namespace unittests
             SubTest(new Half());
             SubTest(new decimal());
             SubTest(new Complex());
+            SubTest(new Quaternion());
+            SubTest(new Vector2());
+            SubTest(new Vector3());
+            SubTest(new Vector4());
+            SubTest(new Plane());
+            SubTest(new Matrix3x2());
+            SubTest(new Matrix4x4());
             SubTest(new BigInteger());
             SubTest(new Guid());
             SubTest(new DateTime());

@@ -18,11 +18,26 @@ public static class DeepCopyObjectExtensions
     {
         private static readonly Func<object, object> _shallowClone;
 
-        // Set of deeply immutable types. This includes all primitives, some known immutable
+        // Set of deeply immutable types**. This includes all primitives, some known immutable
         // valuetypes, and a few sealed immutable reference types such as 'string', 'DBNull' and
         // 'Version'. Nullable<T> of an immutable valuetype T is itself immutable as well but rather
         // than duplicating all those entries here, they are added programmatically in the static
         // constructor below.
+        //
+        // When the DeepCopy encounters an object of one of these types it can simply return the same
+        // object without further (slower) deepcopy of its member fields.
+        //
+        // ** or mutable value types (struct) that do not contain any reference fields (e.g. Quaternion,
+        // Vector2 etc, see below). This is still safe even for boxed versions of the struct because:
+        //
+        // - when boxing such a struct, a copy is created => the boxed struct doesn't see
+        //   mutations of the original struct
+        //
+        // - when unboxing such a struct another copy is created => mutations of the unboxed
+        //   struct doesn't affect the boxed struct
+        //
+        // - c# doesn't let you directly mutate fields of a boxed object (though with reflection
+        //   anything is possible)
         private static readonly HashSet<Type> _immutableTypes = new()
         {
             typeof(nint),
@@ -42,14 +57,14 @@ public static class DeepCopyObjectExtensions
             typeof(Half),
             typeof(decimal),
             typeof(BigInteger),
-            typeof(Vector2),
-            typeof(Vector3),
-            typeof(Vector4),
-            typeof(Matrix3x2),
-            typeof(Matrix4x4),
             typeof(Complex),
-            typeof(Quaternion),
-            typeof(Plane),
+            typeof(Quaternion),     // ref free mutable value type
+            typeof(Vector2),        // ref free mutable value type
+            typeof(Vector3),        // ref free mutable value type
+            typeof(Vector4),        // ref free mutable value type
+            typeof(Plane),          // ref free mutable value type
+            typeof(Matrix3x2),      // ref free mutable value type
+            typeof(Matrix4x4),      // ref free mutable value type
             typeof(Guid),
             typeof(DateTime),
             typeof(DateOnly),
@@ -150,12 +165,12 @@ public static class DeepCopyObjectExtensions
 
         private static void ReplaceArrayElements(Array array, Func<object?, object?> func, int dimension, int[] counts, int[] indices)
         {
-            int len = counts[dimension];
+            var len = counts[dimension];
 
             if(dimension < (counts.Length - 1))
             {
                 // not the final dimension, loop the range, and recursively handle one dimension higher
-                for(int t = 0; t < len; t++)
+                for(var t = 0; t < len; t++)
                 {
                     indices[dimension] = t;
                     ReplaceArrayElements(array, func, dimension + 1, counts, indices);
@@ -164,7 +179,7 @@ public static class DeepCopyObjectExtensions
             else
             {
                 // we've reached the final dimension where the elements are closest together in memory. Do a final loop.
-                for(int t = 0; t < len; t++)
+                for(var t = 0; t < len; t++)
                 {
                     indices[dimension] = t;
                     array.SetValue(func(array.GetValue(indices)), indices);
@@ -177,8 +192,8 @@ public static class DeepCopyObjectExtensions
             if(array.Rank == 1)
             {
                 // do a fast loop for the common case, a one dimensional array
-                int len = array.GetLength(0);
-                for(int t = 0; t < len; t++)
+                var len = array.GetLength(0);
+                for(var t = 0; t < len; t++)
                 {
                     array.SetValue(func(array.GetValue(t)), t);
                 }
