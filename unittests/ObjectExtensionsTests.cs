@@ -402,8 +402,8 @@ public class ObjectExtensionsTests
     [TestMethod]
     public void Copy_DeepCopiesMutableFieldsOfValueTypes()
     {
-        // Tuple itself is an immutable valuetype, MySingleObject is a mutable reference type
-        var a = new Tuple<MySingleObject>(new MySingleObject());
+        // ValueTuple itself is an immutable valuetype, MySingleObject is a mutable reference type
+        var a = new ValueTuple<MySingleObject>(new MySingleObject());
         var b = a.DeepCopy()!;
         Assert.AreNotSame(a, b);
         Assert.AreNotSame(a.Item1, b.Item1);
@@ -414,8 +414,8 @@ public class ObjectExtensionsTests
     [TestMethod]
     public void Copy_ShallowCopiesImmutableFieldsOfValueTypes()
     {
-        // Tuple itself is an immutable valuetype, string is an immutable reference type
-        var a = new Tuple<string>("U0FGZSBpcyBTaGl0dHkgQWdpbGUgRm9yIEVudGVycHJpc2VzIQ==");
+        // ValueTuple itself is an immutable valuetype, string is an immutable reference type
+        var a = new ValueTuple<string>("U0FGZSBpcyBTaGl0dHkgQWdpbGUgRm9yIEVudGVycHJpc2VzIQ==");
         var b = a.DeepCopy()!;
         Assert.AreNotSame(a, b);
         Assert.AreSame(a.Item1, b.Item1);
