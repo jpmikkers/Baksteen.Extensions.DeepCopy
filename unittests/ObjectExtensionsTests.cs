@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Runtime.CompilerServices;
 using Baksteen.Extensions.DeepCopy;
 using System.Numerics;
+using System.Reflection;
 
 namespace unittests;
 
@@ -421,5 +422,29 @@ public class ObjectExtensionsTests
         Assert.AreSame(a.Item1, b.Item1);
         Assert.AreEqual(a.Item1, b.Item1);
         Assert.AreEqual(a, b);
+    }
+
+    [TestMethod]
+    [DataRow(typeof(Quaternion))]
+    [DataRow(typeof(Vector2))]
+    [DataRow(typeof(Vector3))]
+    [DataRow(typeof(Vector4))]
+    [DataRow(typeof(Plane))]
+    [DataRow(typeof(Matrix3x2))]
+    [DataRow(typeof(Matrix4x4))]
+    public void EnsureMutableValueTypesHaveNoReferenceFields(Type testType)
+    {
+        var typeToReflect = testType;
+
+        Assert.IsTrue(typeToReflect.IsValueType);
+
+        while (typeToReflect.BaseType != null)
+        {
+            foreach (var fieldInfo in typeToReflect.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly))
+            {
+                Assert.IsTrue(fieldInfo.FieldType.IsValueType || fieldInfo.FieldType.IsPrimitive);
+            }
+            typeToReflect = typeToReflect.BaseType;
+        }
     }
 }
