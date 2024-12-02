@@ -3,7 +3,6 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Xml.Linq;
-using System.Linq.Expressions;
 using System.Linq;
 using System.Numerics;
 
@@ -87,9 +86,7 @@ public static class DeepCopyObjectExtensions
         static DeepCopyContext()
         {
             var cloneMethod = typeof(object).GetMethod("MemberwiseClone", BindingFlags.NonPublic | BindingFlags.Instance)!;
-            var p1 = Expression.Parameter(typeof(object));
-            var body = Expression.Call(p1, cloneMethod);
-            _shallowClone = Expression.Lambda<Func<object, object>>(body, p1).Compile();
+            _shallowClone = cloneMethod.CreateDelegate<Func<object, object>>();
 
             // Nullable<T> of deeply immutable valuetypes are themselves deeply immutable
             foreach(var type in _immutableTypes.Where(t => t.IsValueType).ToList())
