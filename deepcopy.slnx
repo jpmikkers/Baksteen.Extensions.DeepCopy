@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="deepcopy/Baksteen.Extensions.DeepCopy.csproj" />
+  <Project Path="unittests/unittests.csproj" />
+</Solution>

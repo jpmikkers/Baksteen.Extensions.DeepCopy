@@ -76,6 +76,10 @@ public static class DeepCopyObjectExtensions
             typeof(DBNull),
             typeof(Version),
             typeof(Uri),
+#if NET9_0_OR_GREATER
+            typeof(Int128),
+            typeof(UInt128),
+#endif
         };
 
         // to handle object graphs containing cycles, _visited keeps track of instances we've already cloned

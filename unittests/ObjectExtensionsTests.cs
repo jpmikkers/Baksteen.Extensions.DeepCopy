@@ -124,6 +124,10 @@ public class ObjectExtensionsTests
         Assert.IsFalse(typeof(DateTimeOffset).IsPrimitive);
         Assert.IsFalse(typeof(Range).IsPrimitive);
         Assert.IsFalse(typeof(Index).IsPrimitive);
+#if NET9_0_OR_GREATER
+        Assert.IsFalse(typeof(Int128).IsPrimitive);
+        Assert.IsFalse(typeof(UInt128).IsPrimitive);
+#endif
     }
 
     [TestMethod]
@@ -197,6 +201,10 @@ public class ObjectExtensionsTests
         SubTest(DBNull.Value);
         SubTest(new Version());
         SubTest(new Uri(@"http://localhost:80"));
+#if NET9_0_OR_GREATER
+        SubTest(new Int128());
+        SubTest(new UInt128());
+#endif
     }
 
     [TestMethod]
@@ -210,7 +218,7 @@ public class ObjectExtensionsTests
         XElement copied = el.DeepCopy()!;
 
         var children = copied.Elements("child").ToList();
-        Assert.AreEqual(2, children.Count);
+        Assert.HasCount(2, children);
         Assert.AreEqual("wow", children[0].Attribute("attrib")!.Value);
         Assert.AreEqual("hi", children[0].Value);
 
@@ -238,7 +246,7 @@ public class ObjectExtensionsTests
         };
         IList<MySingleObject> copied = list.DeepCopy()!;
 
-        Assert.AreEqual(2, copied.Count);
+        Assert.HasCount(2, copied);
         Assert.AreEqual("1", copied[0].One);
         Assert.AreEqual("2", copied[1].One);
     }
@@ -265,7 +273,7 @@ public class ObjectExtensionsTests
         object[] arr = new object[1];
         arr[0] = arr;
         var copy = arr.DeepCopy()!;
-        Assert.ReferenceEquals(copy, copy[0]);
+        Assert.AreSame(copy, copy[0]);
     }
 
     [TestMethod]
@@ -406,7 +414,6 @@ public class ObjectExtensionsTests
         // ValueTuple itself is an immutable valuetype, MySingleObject is a mutable reference type
         var a = new ValueTuple<MySingleObject>(new MySingleObject());
         var b = a.DeepCopy()!;
-        Assert.AreNotSame(a, b);
         Assert.AreNotSame(a.Item1, b.Item1);
         Assert.AreEqual(a.Item1, b.Item1);
         Assert.AreEqual(a, b);
@@ -418,7 +425,6 @@ public class ObjectExtensionsTests
         // ValueTuple itself is an immutable valuetype, string is an immutable reference type
         var a = new ValueTuple<string>("U0FGZSBpcyBTaGl0dHkgQWdpbGUgRm9yIEVudGVycHJpc2VzIQ==");
         var b = a.DeepCopy()!;
-        Assert.AreNotSame(a, b);
         Assert.AreSame(a.Item1, b.Item1);
         Assert.AreEqual(a.Item1, b.Item1);
         Assert.AreEqual(a, b);
