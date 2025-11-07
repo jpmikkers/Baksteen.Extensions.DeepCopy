@@ -8,6 +8,8 @@ using Baksteen.Extensions.DeepCopy;
 using System.Numerics;
 using System.Reflection;
 
+[assembly: Parallelize]
+
 namespace unittests;
 
 [TestClass]
