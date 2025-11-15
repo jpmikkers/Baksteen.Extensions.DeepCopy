@@ -272,7 +272,7 @@ public class ObjectExtensionsTests
     [TestMethod]
     public void Copy_CopiesSelfReferencingArray()
     {
-        object[] arr = new object[1];
+        var arr = new object[1];
         arr[0] = arr;
         var copy = arr.DeepCopy()!;
         Assert.AreSame(copy, copy[0]);
