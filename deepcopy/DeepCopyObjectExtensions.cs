@@ -80,6 +80,11 @@ public static class DeepCopyObjectExtensions
             typeof(Int128),
             typeof(UInt128),
 #endif
+#if NET11_0_OR_GREATER
+            typeof(Decimal32),
+            typeof(Decimal64),
+            typeof(Decimal128),
+#endif
         };
 
         // to handle object graphs containing cycles, _visited keeps track of instances we've already cloned

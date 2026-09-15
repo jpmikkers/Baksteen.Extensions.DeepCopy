@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Xml.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Runtime.CompilerServices;
-using Baksteen.Extensions.DeepCopy;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Xml.Linq;
+using Baksteen.Extensions.DeepCopy;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [assembly: Parallelize]
 
@@ -22,8 +22,14 @@ public class ObjectExtensionsTests
 
         public int Two
         {
-            get { return two; }
-            set { two = value; }
+            get
+            {
+                return two;
+            }
+            set
+            {
+                two = value;
+            }
         }
 
         public override bool Equals(object? obj)
@@ -130,6 +136,11 @@ public class ObjectExtensionsTests
         Assert.IsFalse(typeof(Int128).IsPrimitive);
         Assert.IsFalse(typeof(UInt128).IsPrimitive);
 #endif
+#if NET11_0_OR_GREATER
+        Assert.IsFalse(typeof(Decimal32).IsPrimitive);
+        Assert.IsFalse(typeof(Decimal64).IsPrimitive);
+        Assert.IsFalse(typeof(Decimal128).IsPrimitive);
+#endif
     }
 
     [TestMethod]
@@ -206,6 +217,11 @@ public class ObjectExtensionsTests
 #if NET9_0_OR_GREATER
         SubTest(new Int128());
         SubTest(new UInt128());
+#endif
+#if NET11_0_OR_GREATER
+        SubTest(new Decimal32());
+        SubTest(new Decimal64());
+        SubTest(new Decimal128());
 #endif
     }
 
@@ -290,7 +306,7 @@ public class ObjectExtensionsTests
     static IEnumerable<T> ToIEnumerable<T>(System.Collections.IEnumerable enumerable)
     {
         var enumerator = enumerable.GetEnumerator();
-        while(enumerator.MoveNext())
+        while (enumerator.MoveNext())
         {
             yield return (T)enumerator.Current;
         }
@@ -304,15 +320,15 @@ public class ObjectExtensionsTests
         var counts1 = Enumerable.Range(0, array1.Rank).Select(array1.GetLongLength).ToArray();
         var counts2 = Enumerable.Range(0, array2.Rank).Select(array2.GetLongLength).ToArray();
 
-        foreach(var (First, Second) in counts1.Zip(counts2))
+        foreach (var (First, Second) in counts1.Zip(counts2))
         {
             Assert.AreEqual(First, Second);
         }
 
-        foreach(var (x, y) in ToIEnumerable<T>(array1).Zip(ToIEnumerable<T>(array2)))
+        foreach (var (x, y) in ToIEnumerable<T>(array1).Zip(ToIEnumerable<T>(array2)))
         {
             Assert.AreEqual(x, y);
-            if(refsMustBeDifferent) Assert.AreNotSame(x, y);
+            if (refsMustBeDifferent) Assert.AreNotSame(x, y);
         }
     }
 
