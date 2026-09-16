@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Xml.Linq;
+using System.Text;
 using Baksteen.Extensions.DeepCopy;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -132,6 +133,7 @@ public class ObjectExtensionsTests
         Assert.IsFalse(typeof(DateTimeOffset).IsPrimitive);
         Assert.IsFalse(typeof(Range).IsPrimitive);
         Assert.IsFalse(typeof(Index).IsPrimitive);
+        Assert.IsFalse(typeof(Rune).IsPrimitive);
 #if NET9_0_OR_GREATER
         Assert.IsFalse(typeof(Int128).IsPrimitive);
         Assert.IsFalse(typeof(UInt128).IsPrimitive);
@@ -214,6 +216,7 @@ public class ObjectExtensionsTests
         SubTest(DBNull.Value);
         SubTest(new Version());
         SubTest(new Uri(@"http://localhost:80"));
+        SubTest(new Rune('A'));
 #if NET9_0_OR_GREATER
         SubTest(new Int128());
         SubTest(new UInt128());

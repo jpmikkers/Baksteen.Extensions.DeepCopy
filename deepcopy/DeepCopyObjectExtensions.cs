@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Xml.Linq;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 
 public static class DeepCopyObjectExtensions
 {
@@ -76,6 +77,7 @@ public static class DeepCopyObjectExtensions
             typeof(DBNull),
             typeof(Version),
             typeof(Uri),
+            typeof(Rune),
 #if NET9_0_OR_GREATER
             typeof(Int128),
             typeof(UInt128),
