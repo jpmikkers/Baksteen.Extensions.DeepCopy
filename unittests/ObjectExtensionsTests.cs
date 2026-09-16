@@ -471,4 +471,27 @@ public class ObjectExtensionsTests
             typeToReflect = typeToReflect.BaseType;
         }
     }
+
+#if NET11_0_OR_GREATER
+    public record class Dog
+    {
+        public int Age { get; set; }
+    }
+
+    public record class Cat(float Weight);
+    public union Pet(Dog,Cat);
+
+    [TestMethod]
+    public void EnsureDiscriminatedUnionsAreDeepCloned()
+    {
+        var mydog=new Dog{Age=5};
+        Pet dogpet = new Pet(mydog);
+        Pet dogpetCopy = dogpet.DeepCopy()!;
+        Assert.AreNotSame(dogpet.Value, dogpetCopy.Value);
+        Assert.IsTrue(dogpetCopy is Dog);
+        Assert.AreEqual(dogpet, dogpetCopy);
+        mydog.Age=6;
+        Assert.AreNotEqual(dogpet, dogpetCopy);
+    }
+#endif
 }
