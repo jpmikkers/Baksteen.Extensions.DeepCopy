@@ -4,8 +4,8 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Xml.Linq;
 using System.Text;
+using System.Xml.Linq;
 using Baksteen.Extensions.DeepCopy;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -142,6 +142,7 @@ public class ObjectExtensionsTests
         Assert.IsFalse(typeof(Decimal32).IsPrimitive);
         Assert.IsFalse(typeof(Decimal64).IsPrimitive);
         Assert.IsFalse(typeof(Decimal128).IsPrimitive);
+        Assert.IsFalse(typeof(BFloat16).IsPrimitive);
 #endif
     }
 
@@ -225,6 +226,7 @@ public class ObjectExtensionsTests
         SubTest(new Decimal32());
         SubTest(new Decimal64());
         SubTest(new Decimal128());
+        SubTest(new BFloat16());
 #endif
     }
 
@@ -478,22 +480,25 @@ public class ObjectExtensionsTests
 #if NET11_0_OR_GREATER
     public record class Dog
     {
-        public int Age { get; set; }
+        public int Age
+        {
+            get; set;
+        }
     }
 
     public record class Cat(float Weight);
-    public union Pet(Dog,Cat);
+    public union Pet(Dog, Cat);
 
     [TestMethod]
     public void EnsureDiscriminatedUnionsAreDeepCloned()
     {
-        var mydog=new Dog{Age=5};
+        var mydog = new Dog { Age = 5 };
         Pet dogpet = new Pet(mydog);
         Pet dogpetCopy = dogpet.DeepCopy()!;
         Assert.AreNotSame(dogpet.Value, dogpetCopy.Value);
         Assert.IsTrue(dogpetCopy is Dog);
         Assert.AreEqual(dogpet, dogpetCopy);
-        mydog.Age=6;
+        mydog.Age = 6;
         Assert.AreNotEqual(dogpet, dogpetCopy);
     }
 #endif
