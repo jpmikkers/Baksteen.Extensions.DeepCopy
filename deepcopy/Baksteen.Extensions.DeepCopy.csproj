@@ -4,7 +4,7 @@
     <TargetFrameworks>net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.5</Version>
+    <Version>1.0.6</Version>
     <RootNamespace>Baksteen.Extensions.DeepCopy</RootNamespace>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>clone;deepclone;copy;deepcopy;reflection;extension</PackageTags>
@@ -15,8 +15,8 @@ It has various optimizations so it remains surprisingly fast, about 7 times fast
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/jpmikkers/Baksteen.Extensions.DeepCopy.git</RepositoryUrl>
     <PackageProjectUrl>https://github.com/jpmikkers/Baksteen.Extensions.DeepCopy</PackageProjectUrl>
-    <PackageReleaseNotes>Added net10 support, removed net6. Support Int128 and UInt128.</PackageReleaseNotes>
-    <Copyright>Copyright (c) JPMikkers 2025</Copyright>
+    <PackageReleaseNotes>Added net11 support, DecimalX and BFloat16.</PackageReleaseNotes>
+    <Copyright>Copyright (c) JPMikkers 2026</Copyright>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
