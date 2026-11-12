@@ -1,10 +1,11 @@
 ﻿namespace Baksteen.Extensions.DeepCopy;
 
 using System.Collections.Generic;
-using System.Reflection;
-using System.Xml.Linq;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
+using System.Text;
+using System.Xml.Linq;
 
 public static class DeepCopyObjectExtensions
 {
@@ -76,9 +77,16 @@ public static class DeepCopyObjectExtensions
             typeof(DBNull),
             typeof(Version),
             typeof(Uri),
+            typeof(Rune),
 #if NET9_0_OR_GREATER
             typeof(Int128),
             typeof(UInt128),
+#endif
+#if NET11_0_OR_GREATER
+            typeof(Decimal32),
+            typeof(Decimal64),
+            typeof(Decimal128),
+            typeof(BFloat16),
 #endif
         };
 
@@ -93,7 +101,7 @@ public static class DeepCopyObjectExtensions
             _shallowClone = cloneMethod.CreateDelegate<Func<object, object>>();
 
             // Nullable<T> of deeply immutable valuetypes are themselves deeply immutable
-            foreach(var type in _immutableTypes.Where(t => t.IsValueType).ToList())
+            foreach (var type in _immutableTypes.Where(t => t.IsValueType).ToList())
             {
                 _immutableTypes.Add(typeof(Nullable<>).MakeGenericType(type));
             }
@@ -110,35 +118,35 @@ public static class DeepCopyObjectExtensions
 
         public object? InternalCopy(object? originalObject, bool includeInObjectGraph)
         {
-            if(originalObject == null) return null;
+            if (originalObject == null) return null;
 
             var typeToReflect = originalObject.GetType();
-            if(IsDeeplyImmutable(typeToReflect) || originalObject is Type) return originalObject;
+            if (IsDeeplyImmutable(typeToReflect) || originalObject is Type) return originalObject;
 
-            if(typeof(XElement).IsAssignableFrom(typeToReflect)) return new XElement((XElement)originalObject);
-            if(typeof(Delegate).IsAssignableFrom(typeToReflect)) return null;
+            if (typeof(XElement).IsAssignableFrom(typeToReflect)) return new XElement((XElement)originalObject);
+            if (typeof(Delegate).IsAssignableFrom(typeToReflect)) return null;
 
-            if(includeInObjectGraph)
+            if (includeInObjectGraph)
             {
-                if(_visited.TryGetValue(originalObject, out var result)) return result;
+                if (_visited.TryGetValue(originalObject, out var result)) return result;
             }
 
             var cloneObject = _shallowClone(originalObject);
 
-            if(includeInObjectGraph)
+            if (includeInObjectGraph)
             {
                 _visited.Add(originalObject, cloneObject);
             }
 
-            if(typeToReflect.IsArray)
+            if (typeToReflect.IsArray)
             {
                 var arrayElementType = typeToReflect.GetElementType()!;
 
-                if(IsDeeplyImmutable(arrayElementType))
+                if (IsDeeplyImmutable(arrayElementType))
                 {
                     // for an array of primitives, do nothing. The shallow clone is enough.
                 }
-                else if(arrayElementType.IsValueType)
+                else if (arrayElementType.IsValueType)
                 {
                     // if its an array of structs, there's no need to check and add the individual elements to 'visited', because in .NET it's impossible to create
                     // references to individual array elements.
@@ -152,7 +160,7 @@ public static class DeepCopyObjectExtensions
             }
             else
             {
-                foreach(var fieldInfo in CachedNonShallowFields(typeToReflect))
+                foreach (var fieldInfo in CachedNonShallowFields(typeToReflect))
                 {
                     var originalFieldValue = fieldInfo.GetValue(originalObject);
                     // a valuetype field can never have a reference pointing to it, so don't check the object graph in that case
@@ -168,10 +176,10 @@ public static class DeepCopyObjectExtensions
         {
             var len = counts[dimension];
 
-            if(dimension < (counts.Length - 1))
+            if (dimension < (counts.Length - 1))
             {
                 // not the final dimension, loop the range, and recursively handle one dimension higher
-                for(var t = 0; t < len; t++)
+                for (var t = 0; t < len; t++)
                 {
                     indices[dimension] = t;
                     ReplaceArrayElements(array, func, dimension + 1, counts, indices);
@@ -180,7 +188,7 @@ public static class DeepCopyObjectExtensions
             else
             {
                 // we've reached the final dimension where the elements are closest together in memory. Do a final loop.
-                for(var t = 0; t < len; t++)
+                for (var t = 0; t < len; t++)
                 {
                     indices[dimension] = t;
                     array.SetValue(func(array.GetValue(indices)), indices);
@@ -190,11 +198,11 @@ public static class DeepCopyObjectExtensions
 
         private static void ReplaceArrayElements(Array array, Func<object?, object?> func)
         {
-            if(array.Rank == 1)
+            if (array.Rank == 1)
             {
                 // do a fast loop for the common case, a one dimensional array
                 var len = array.GetLength(0);
-                for(var t = 0; t < len; t++)
+                for (var t = 0; t < len; t++)
                 {
                     array.SetValue(func(array.GetValue(t)), t);
                 }
@@ -210,7 +218,7 @@ public static class DeepCopyObjectExtensions
 
         private FieldInfo[] CachedNonShallowFields(Type typeToReflect)
         {
-            if(!_nonShallowFieldCache.TryGetValue(typeToReflect, out var result))
+            if (!_nonShallowFieldCache.TryGetValue(typeToReflect, out var result))
             {
                 result = NonShallowFields(typeToReflect).ToArray();
                 _nonShallowFieldCache[typeToReflect] = result;
@@ -225,11 +233,11 @@ public static class DeepCopyObjectExtensions
         /// <returns></returns>
         private static IEnumerable<FieldInfo> NonShallowFields(Type typeToReflect)
         {
-            while(typeToReflect.BaseType != null)
+            while (typeToReflect.BaseType != null)
             {
-                foreach(var fieldInfo in typeToReflect.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly))
+                foreach (var fieldInfo in typeToReflect.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly))
                 {
-                    if(IsDeeplyImmutable(fieldInfo.FieldType)) continue; // this is 5% faster than a where clause..
+                    if (IsDeeplyImmutable(fieldInfo.FieldType)) continue; // this is 5% faster than a where clause..
                     yield return fieldInfo;
                 }
                 typeToReflect = typeToReflect.BaseType;
